@@ -1,12 +1,127 @@
-# React + Vite
+# 💩 Poop Map 中大便便地圖｜校園社交互動平台
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+一款結合趣味、健康與互動的中央大學地圖式社交網站，讓使用者能以輕鬆幽默的方式紀錄如廁經驗、追蹤生活習慣，同時透過 AI 分析獲得個人化飲食與健康建議。
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🎯 專案目的
 
-## Expanding the ESLint configuration
+在壓力繁重的現代生活中，上廁所反而成為一種短暫且真實的放鬆節奏。本平台致力於：
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- 提供如廁經驗的無壓社交出口
+- 地圖化紀錄增添趣味與觀察價值
+- 結合 AI 健康提醒與飲食建議，打造個人化的生活追蹤工具
+
+---
+
+## 🚀 功能特色
+
+- 🗺️ **地圖定位**：Google Maps API 精準定位如廁地點  
+- 🔐 **登入／註冊系統**：表單驗證 + JWT 安全認證  
+- 📝 **便便紀錄表單**：時間、心情、地點、評分完整輸入  
+- 🤖 **AI 分析引擎**：分析內容並給出飲食／健康建議  
+- 💩 **便便圖標自訂**：可選 emoji / 顏色 / 圖像  
+- 📊 **數據視覺化**：歷史紀錄圖表與行為分析  
+- 👥 **社交功能**：加好友、便後點評、留言互動  
+- 💭 **趣味分享**：今日最健康便點、留言牆
+
+---
+
+## 🧱 技術架構
+
+### 前端 Frontend
+- `React` + `Vite`
+- `Tailwind CSS`
+- `Google Maps JavaScript API`
+
+### 後端 Backend
+- `Node.js` + `Express`
+- `JWT` 驗證
+- `RESTful API`
+
+### 資料庫 Database
+- `MongoDB Atlas`
+
+### AI 分析
+- `OpenAI GPT API`
+- `Chart.js` / `Recharts`
+
+### 部署 Deployment
+- `Vercel`（前端）
+- `Render`（後端）
+
+---
+
+## ⚙️ 開始使用
+
+### 1️⃣ 克隆專案
+
+```bash
+git clone git@github.com:RayTsai94/NcuPoopTracker.git
+cd NcuPoopTracker
+```
+
+### 2️⃣ 安裝依賴
+
+```bash
+npm install
+```
+
+### 3️⃣ 設定環境變數
+
+建立 `.env` 檔案並填入：
+
+```env
+VITE_GOOGLE_MAPS_API_KEY=你的_Google_Maps_API_金鑰
+```
+
+### 4️⃣ 啟動開發伺服器
+
+```bash
+npm run dev
+```
+
+---
+
+## 👥 團隊成員
+
+| 姓名 | 負責內容 |
+|------|-----------|
+| 游旻峻 | UI/UX 前端設計 + 頁面製作 |
+| 李昭儀 | 登入 + 使用者系統 |
+| 吳辰夜 | 地圖功能 + 便便紀錄 |
+| 蔡睿中 | 後端開發 + 資料串接 |
+| 葉治廷 | AI 提問分析 + 整合測試 |
+
+---
+
+## 🗓️ 開發時程
+
+### 第1週
+- 架構規劃
+- 登入與地圖初版
+- 建立 Express 架構
+- 初步測試 AI 串接
+
+### 第2週
+- 完成登入表單驗證與串接
+- 建立紀錄表單與資料儲存
+- MongoDB 串接使用者與紀錄資料
+- OpenAI 回饋文字初版完成
+
+### 第3週
+- 完成互動式地圖功能
+- 串接 AI 回饋框與歷史紀錄
+- 開始製作圖表與資料視覺化
+- 展開整合與除錯流程
+
+### 第4週
+- 視覺優化與動畫補強
+- Demo 與簡報準備
+- 技術文件與期末交付產出
+
+---
+
+## 📜 授權 License
+
+本專案採用 MIT 授權條款，詳情請見 [`LICENSE`](LICENSE)。
