@@ -1,5 +1,3 @@
-![Food Map Logo](logo.png)
-
 # 🍽️ Food Map 中大美食打卡校園社交互動平台
 
 ## 專案主題
