@@ -3,7 +3,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>今天要打卡嗎？</title>
+  <title>編輯打卡記錄</title>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel="stylesheet">
   <style>
     body {
@@ -64,20 +64,40 @@
       background-color: #fffaf1;
     }
 
+    .current-image {
+      max-width: 200px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
     button {
-      width: 100%;
-      padding: 10px;
-      background-color: #FFA45B;
-      color: white;
-      font-size: 18px;
+      padding: 10px 20px;
       border: none;
       border-radius: 12px;
       cursor: pointer;
+      font-size: 16px;
+      font-family: 'Baloo 2', cursive;
       transition: background-color 0.3s;
     }
 
+    .save-btn {
+      background-color: #FFA45B;
+      color: white;
+    }
+
+    .cancel-btn {
+      background-color: #ff6b6b;
+      color: white;
+    }
+
     button:hover {
-      background-color: #E17C4D;
+      opacity: 0.9;
     }
 
     .required {
@@ -95,25 +115,52 @@
   </div>
 
   <div class="container">
-    <h2>📝 今天要打卡嗎？</h2>
-    <ol style="margin-bottom:20px; color:#E17C4D; font-weight:bold;">
-      <li>1. 選擇日期</li>
-      <li>2. 填寫店家、品項、價格、評級、表情標籤（<span style='color:red;'>必填</span>）</li>
-      <li>3. 心情文字紀錄與照片上傳（可選）</li>
-      <li>4. 按下送出</li>
-    </ol>
+    <h2>編輯打卡記錄</h2>
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
-      <div style="margin-bottom:10px;">{{ form.date.label_tag }}<span class="required">*</span> {{ form.date }}</div>
-      <div style="margin-bottom:10px;">{{ form.restaurant.label_tag }}<span class="required">*</span> {{ form.restaurant }}</div>
-      <div style="margin-bottom:10px;">{{ form.item.label_tag }}<span class="required">*</span> {{ form.item }}</div>
-      <div style="margin-bottom:10px;">{{ form.price.label_tag }}<span class="required">*</span> {{ form.price }}</div>
-      <div style="margin-bottom:10px;">{{ form.rating.label_tag }}<span class="required">*</span> {{ form.rating }}</div>
-      <div style="margin-bottom:10px;">{{ form.emotion_tag.label_tag }}<span class="required">*</span> {{ form.emotion_tag }}</div>
-      <div style="margin-bottom:10px;">{{ form.comment.label_tag }} {{ form.comment }}</div>
-      <div style="margin-bottom:10px;">{{ form.image.label_tag }} {{ form.image }}</div>
-      <button type="submit">打卡！</button>
+      <div>
+        {{ form.date.label_tag }}<span class="required">*</span>
+        {{ form.date }}
+      </div>
+      <div>
+        {{ form.restaurant.label_tag }}<span class="required">*</span>
+        {{ form.restaurant }}
+      </div>
+      <div>
+        {{ form.item.label_tag }}<span class="required">*</span>
+        {{ form.item }}
+      </div>
+      <div>
+        {{ form.price.label_tag }}<span class="required">*</span>
+        {{ form.price }}
+      </div>
+      <div>
+        {{ form.rating.label_tag }}<span class="required">*</span>
+        {{ form.rating }}
+      </div>
+      <div>
+        {{ form.emotion_tag.label_tag }}<span class="required">*</span>
+        {{ form.emotion_tag }}
+      </div>
+      <div>
+        {{ form.comment.label_tag }}
+        {{ form.comment }}
+      </div>
+      {% if checkin.image %}
+        <div>
+          <p>目前照片：</p>
+          <img src="{{ checkin.image.url }}" alt="目前照片" class="current-image">
+        </div>
+      {% endif %}
+      <div>
+        {{ form.image.label_tag }}
+        {{ form.image }}
+      </div>
+      <div class="button-group">
+        <button type="button" class="cancel-btn" onclick="window.location.href='{% url 'calendar' %}'">取消</button>
+        <button type="submit" class="save-btn">儲存修改</button>
+      </div>
     </form>
   </div>
 </body>
-</html>
+</html> 

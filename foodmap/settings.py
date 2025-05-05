@@ -54,7 +54,7 @@ ROOT_URLCONF = "foodmap.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -134,7 +134,7 @@ INSTALLED_APPS = [
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "template"],  # 這裡是你要放 calendar.html 的資料夾
+        'DIRS': [BASE_DIR / "templates"],  # 這裡是你要放 calendar.html 的資料夾
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
