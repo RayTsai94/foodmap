@@ -1,0 +1,63 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>美食打卡</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Baloo 2', cursive;
+      background-color: #FFF9ED;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo {
+      width: 200px;
+      margin-bottom: 40px;
+    }
+
+    .button-container {
+      display: flex;
+      gap: 20px;
+    }
+
+    .btn {
+      padding: 15px 40px;
+      font-size: 20px;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+      text-decoration: none;
+      color: white;
+      font-family: 'Baloo 2', cursive;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .checkin-btn {
+      background-color: #FFA45B;
+    }
+
+    .calendar-btn {
+      background-color: #E17C4D;
+    }
+  </style>
+</head>
+<body>
+  <img src="{% static 'logo.png' %}" alt="Logo" class="logo">
+  <div class="button-container">
+    <a href="{% url 'new_checkin' %}" class="btn checkin-btn">新增打卡</a>
+    <a href="{% url 'calendar' %}" class="btn calendar-btn">查看行事曆</a>
+  </div>
+</body>
+</html> 

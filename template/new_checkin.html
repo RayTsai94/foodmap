@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>今天要打卡嗎？</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Baloo 2', cursive;
+      background-color: #FFF9ED;
+      margin: 40px;
+    }
+
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background-color: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    .nav-logo {
+      height: 50px;
+      cursor: pointer;
+    }
+
+    .nav-links a {
+      color: #E17C4D;
+      text-decoration: none;
+      margin-left: 20px;
+      font-size: 18px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background-color: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #E17C4D;
+      margin-bottom: 20px;
+    }
+
+    .form-input, .form-select, .form-textarea, .form-file {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    .form-file {
+      background-color: #fffaf1;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #FFA45B;
+      color: white;
+      font-size: 18px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #E17C4D;
+    }
+
+    .required {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <img src="{% static 'logo.png' %}" alt="Logo" class="nav-logo" onclick="window.location.href='/'">
+    <div class="nav-links">
+      <a href="{% url 'new_checkin' %}">新增打卡</a>
+      <a href="{% url 'calendar' %}">行事曆</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <h2>📝 今天要打卡嗎？</h2>
+    <ol style="margin-bottom:20px; color:#E17C4D; font-weight:bold;">
+      <li>1. 選擇日期</li>
+      <li>2. 填寫店家、品項、價格、評級、表情標籤（<span style='color:red;'>必填</span>）</li>
+      <li>3. 心情文字紀錄與照片上傳（可選）</li>
+      <li>4. 按下送出</li>
+    </ol>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div style="margin-bottom:10px;">{{ form.date.label_tag }}<span class="required">*</span> {{ form.date }}</div>
+      <div style="margin-bottom:10px;">{{ form.restaurant.label_tag }}<span class="required">*</span> {{ form.restaurant }}</div>
+      <div style="margin-bottom:10px;">{{ form.item.label_tag }}<span class="required">*</span> {{ form.item }}</div>
+      <div style="margin-bottom:10px;">{{ form.price.label_tag }}<span class="required">*</span> {{ form.price }}</div>
+      <div style="margin-bottom:10px;">{{ form.rating.label_tag }}<span class="required">*</span> {{ form.rating }}</div>
+      <div style="margin-bottom:10px;">{{ form.emotion_tag.label_tag }}<span class="required">*</span> {{ form.emotion_tag }}</div>
+      <div style="margin-bottom:10px;">{{ form.comment.label_tag }} {{ form.comment }}</div>
+      <div style="margin-bottom:10px;">{{ form.image.label_tag }} {{ form.image }}</div>
+      <button type="submit">打卡！</button>
+    </form>
+  </div>
+</body>
+</html>
