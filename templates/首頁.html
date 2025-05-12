@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>美食地圖部落格</title>
+  <style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        background-color: #fffaf0;
+        color: #4a4a4a;
+    }
+
+    .logo {
+        position: fixed;
+        top: -9px;
+        left: -5px;
+        z-index: 2;
+    }
+    .logo img {
+        width: 100px;
+        height: auto;
+        border-radius: 50%;
+    }
+
+    .search-box {
+        display: flex;
+        justify-content: center;
+        padding: 15px;
+        background-color: #ffd36e;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .search-box input {
+        padding: 10px;
+        width: 300px;
+        border: 1px solid #ccc;
+        border-radius: 20px 0 0 20px;
+        font-size: 16px;
+    }
+    .search-box button {
+        padding: 10px 20px;
+        border: 1px solid #ccc;
+        border-radius: 0 20px 20px 0;
+        background-color: #ff5e57;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+    }
+    .search-box button:hover {
+        background-color: #ff3b2f;
+    }
+
+    .navbar {
+        display: flex;
+        background-color: #ff5e57;
+        padding: 15px;
+        justify-content: space-around;
+        align-items: center;
+        position: relative;
+        margin-top: 80px;
+        z-index: 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .navbar a {
+        text-decoration: none;
+        color: white;
+        font-weight: bold;
+        padding: 8px 12px;
+        transition: color 0.3s ease;
+    }
+    .navbar a:hover {
+        color: #ffd36e;
+    }
+    .login-btn {
+        position: absolute;
+        right: 20px;
+        top: 10px;
+        background-color: #ffd36e;
+        color: #4a4a4a;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+    .login-btn:hover {
+        background-color: #ffc045;
+    }
+
+    .content {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 100px auto 0;
+    }
+    .content h3 {
+        text-align: center;
+        color: #ff5e57;
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+    .features {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    .feature {
+        background-color: white;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        width: 22%;
+        margin: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+    .feature:hover {
+        transform: translateY(-10px);
+    }
+    .feature h4 {
+        color: #ff5e57;
+        font-size: 18px;
+        margin-bottom: 10px;
+    }
+    .feature img {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+    }
+
+    footer {
+        background-color: #ff5e57;
+        text-align: center;
+        padding: 20px;
+        color: white;
+        font-size: 14px;
+        margin-top: 30px;
+        box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+    }
+    footer a {
+        color: white;
+        text-decoration: none;
+        margin: 0 10px;
+        transition: color 0.3s ease;
+    }
+    footer a:hover {
+        color: #ffd36e;
+    }
+    /* 新增下拉式選單樣式 */
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: white;
+        min-width: 160px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .dropdown-content a {
+        color: #4a4a4a;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        transition: background-color 0.3s ease;
+    }
+    .dropdown-content a:hover {
+        background-color: #ffd36e;
+    }
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- 新增 logo -->
+  <div class="logo">
+    <img src="images/logo.png" alt="美食地圖部落格 Logo">
+  </div>    
+  <!-- 查詢框 -->
+  <div class="search-box">
+    <input type="text" placeholder="搜尋餐廳或美食...">
+    <button>搜尋</button>
+  </div>
+
+  <!-- !!!!!!!點選目錄!!!!!!! -->
+  <div class="navbar">
+    <div class="dropdown">
+        <a href="food_checkin.html">美食打卡</a>
+        <div class="dropdown-content">
+            <a href="checkin.html">打卡</a>
+            <a href="personal_records.html">看個人紀錄</a>
+            <a href="maps.html">在MAPS上查看</a>
+        </div>
+    </div>
+    <div class="dropdown">
+        <a href="ranking.html">排行榜</a>
+        <div class="dropdown-content">
+            <a href="restaurant_ranking.html">餐廳排行</a>
+            <a href="user_ranking.html">用戶排行</a>
+            <a href="overall_ranking.html">總排行榜</a>
+        </div>
+    </div>
+    <a href="nearby_restaurants.html">附近餐廳</a>
+    <div class="dropdown">
+        <a href="favorites.html">我的最愛</a>
+        <div class="dropdown-content">
+            <a href="my_collections.html">我的收藏</a>
+            <a href="frequent_restaurants.html">常去店家</a>
+        </div>
+    </div>
+    <button class="login-btn">登入/註冊</button>
+  </div>
+
+  <!-- 內容 -->
+  <div class="content">
+    <h3>探索美食，記錄每一刻</h3>
+    <div class="features">
+      <div class="feature">
+        <h4>收穫營養資訊</h4>
+        <img src="images/收穫營養資訊.png" alt="收穫營養資訊">
+      </div>
+      <div class="feature">
+        <h4>撰寫打卡紀錄</h4>
+        <img src="images/撰寫打卡紀錄.png" alt="撰寫打卡紀錄">
+      </div>
+      <div class="feature">
+        <h4>查看打卡點</h4>
+        <img src="images/查看打卡點.png" alt="查看打卡點">
+      </div>
+      <div class="feature">
+        <h4>專業諮詢</h4>
+        <img src="images/專業諮詢.png" alt="專業諮詢">
+      </div>
+    </div>
+  </div>
+
+  <!-- 頁尾 -->
+  <footer>
+    <a href="about.html">關於我們</a> | 
+    <a href="contact.html">聯絡我們</a> | 
+    <a href="terms.html">使用條款</a>
+  </footer>
+</body>
+</html>
