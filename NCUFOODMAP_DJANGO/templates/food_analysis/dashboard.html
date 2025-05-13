@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}營養分析儀表板 - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">營養分析儀表板</h1>
+    <p class="lead mb-5">了解餐廳菜單的營養成分和健康信息</p>
+    
+    <!-- 營養統計區域 -->
+    <div class="analysis-card mb-5">
+        <h2 class="mb-4">平均營養成分</h2>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-box">
+                    <h3>{{ avg_nutrition.avg_calories|floatformat:0|default:"--" }}</h3>
+                    <p>平均熱量 (卡路里)</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box">
+                    <h3>{{ avg_nutrition.avg_protein|floatformat:1|default:"--" }}g</h3>
+                    <p>平均蛋白質</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box">
+                    <h3>{{ avg_nutrition.avg_carbs|floatformat:1|default:"--" }}g</h3>
+                    <p>平均碳水化合物</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box">
+                    <h3>{{ avg_nutrition.avg_fat|floatformat:1|default:"--" }}g</h3>
+                    <p>平均脂肪</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 健康選擇區域 -->
+    <div class="analysis-card mb-5">
+        <h2 class="mb-4">低熱量健康選擇</h2>
+        <div class="row">
+            {% for item in healthy_choices %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}">
+                        {% else %}
+                            <img src="{% static 'img/default-food.jpg' %}" class="card-img-top" alt="{{ item.name }}">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.name }}</h5>
+                            <p class="card-text text-muted">{{ item.restaurant.name }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-success">{{ item.nutrition.calories }} 卡路里</span>
+                                <a href="{% url 'menu_item_detail' item.pk %}" class="btn btn-sm btn-primary">查看詳情</a>
+                            </div>
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between small">
+                                    <span>蛋白質: {{ item.nutrition.protein }}g</span>
+                                    <span>脂肪: {{ item.nutrition.fat }}g</span>
+                                    <span>碳水: {{ item.nutrition.carbs }}g</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        尚未添加低熱量菜單項目。
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- 餐廳營養比較區域 -->
+    <div class="analysis-card">
+        <h2 class="mb-4">餐廳營養比較</h2>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>餐廳</th>
+                        <th>平均熱量</th>
+                        <th>菜單項數量</th>
+                        <th>健康程度</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for restaurant in restaurant_nutrition %}
+                        <tr>
+                            <td>{{ restaurant.name }}</td>
+                            <td>{{ restaurant.avg_calories|floatformat:0 }} 卡路里</td>
+                            <td>{{ restaurant.menu_items.count }}</td>
+                            <td>
+                                <div class="progress" style="height: 8px;">
+                                    {% with health_score=restaurant.avg_calories|floatformat:0|default:"0"|divisibleby:20 %}
+                                        {% if health_score < 30 %}
+                                            <div class="progress-bar bg-success" style="width: {{ 100|add:"-" }}{{ health_score }}%"></div>
+                                        {% elif health_score < 50 %}
+                                            <div class="progress-bar bg-info" style="width: {{ 100|add:"-" }}{{ health_score }}%"></div>
+                                        {% elif health_score < 70 %}
+                                            <div class="progress-bar bg-warning" style="width: {{ 100|add:"-" }}{{ health_score }}%"></div>
+                                        {% else %}
+                                            <div class="progress-bar bg-danger" style="width: {{ 100|add:"-" }}{{ health_score }}%"></div>
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </td>
+                            <td>
+                                <a href="{% url 'restaurant_detail' restaurant.id %}" class="btn btn-sm btn-outline-primary">查看餐廳</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">尚無餐廳營養數據。</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- 營養建議區域 -->
+    <div class="card mt-5">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">營養建議</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-lightbulb text-warning me-2"></i>健康飲食提示</h5>
+                    <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item">選擇蔬菜和水果豐富的菜單項目</li>
+                        <li class="list-group-item">限制高糖和高脂肪食物的攝入</li>
+                        <li class="list-group-item">選擇全穀物而非精製穀物</li>
+                        <li class="list-group-item">保持水分充足，多喝水</li>
+                        <li class="list-group-item">注意份量控制</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5><i class="fas fa-balance-scale text-info me-2"></i>平衡飲食建議</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">每天至少攝入5份蔬果</li>
+                        <li class="list-group-item">選擇低鹽、低糖的食物</li>
+                        <li class="list-group-item">包含各種蛋白質來源</li>
+                        <li class="list-group-item">選擇健康的脂肪來源，如堅果和橄欖油</li>
+                        <li class="list-group-item">避免過多加工食品</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-4 bg-light p-3 rounded">
+                <p class="mb-0"><i class="fas fa-info-circle text-primary me-2"></i>以上營養分析和建議僅供參考，如有特殊飲食需求，請諮詢專業營養師。</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
