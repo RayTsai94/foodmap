@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}NCU 食物地圖 - 餐廳地圖{% endblock %}
+
+{% block extra_css %}
+<style>
+    #restaurant-map {
+        width: 100%;
+        height: 600px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    .map-info-window {
+        padding: 5px;
+        max-width: 250px;
+    }
+    .map-container {
+        position: relative;
+    }
+    .map-overlay {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 10;
+        background-color: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">餐廳地圖</h1>
+    <p class="lead mb-5">在互動式地圖上找尋中央大學周邊的餐廳</p>
+    
+    <div class="map-container mb-5">
+        <div id="restaurant-map"></div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">已標記的餐廳列表</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>餐廳名稱</th>
+                                    <th>地址</th>
+                                    <th>分類</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for restaurant in restaurants %}
+                                <tr>
+                                    <td>{{ restaurant.name }}</td>
+                                    <td>{{ restaurant.address }}</td>
+                                    <td>
+                                        {% for category in restaurant.categories.all %}
+                                        <span class="badge bg-secondary">{{ category.name }}</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'restaurant_detail' restaurant.pk %}" class="btn btn-sm btn-primary">查看詳情</a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">目前尚無地理位置資訊的餐廳</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 準備餐廳位置數據
+    const restaurantLocations = [
+        {% for restaurant in restaurants %}
+        {
+            "id": {{ restaurant.id }},
+            "name": "{{ restaurant.name }}",
+            "lat": {{ restaurant.lat }},
+            "lng": {{ restaurant.lng }},
+            "address": "{{ restaurant.address }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initializeMap" async defer></script>
+{% endblock %} 
