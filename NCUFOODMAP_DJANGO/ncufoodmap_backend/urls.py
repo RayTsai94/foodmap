@@ -23,6 +23,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('restaurants.urls')),
     path('analysis/', include('food_analysis.urls')),
+    path('checkin/', include('checkin.urls')),
+    path('accounts/', include('django.contrib.auth.urls')),
 ]
 
 # 媒體文件服務設定（僅在開發環境下）

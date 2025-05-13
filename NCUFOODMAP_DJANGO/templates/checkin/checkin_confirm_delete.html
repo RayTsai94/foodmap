@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}刪除打卡確認{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h3 class="card-title mb-4 text-center text-danger">⚠️ 刪除打卡確認</h3>
+        <p class="mb-4 text-center">您確定要刪除此筆打卡紀錄嗎？此動作無法復原。</p>
+        <ul class="list-group list-group-flush mb-3">
+          <li class="list-group-item"><strong>用餐日期：</strong>{{ checkin.date }}</li>
+          <li class="list-group-item"><strong>餐廳名稱：</strong>{{ checkin.restaurant_name }}</li>
+          <li class="list-group-item"><strong>品項：</strong>{{ checkin.item }}</li>
+        </ul>
+        <form method="post">
+          {% csrf_token %}
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-danger">確定刪除</button>
+            <a href="{% url 'checkin_detail' pk=checkin.pk %}" class="btn btn-secondary">取消</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

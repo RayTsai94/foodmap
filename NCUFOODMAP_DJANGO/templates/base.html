@@ -35,6 +35,16 @@
                         <a class="nav-link" href="{% url 'map' %}">地圖</a>
                     </li>
                     <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="checkinDropdown" role="button" data-bs-toggle="dropdown">
+                            美食打卡
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'checkin_list' %}">我的打卡紀錄</a></li>
+                            <li><a class="dropdown-item" href="{% url 'checkin_calendar' %}">行事曆檢視</a></li>
+                            <li><a class="dropdown-item" href="{% url 'checkin_create' %}">新增美食打卡</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             食物分析
                         </a>

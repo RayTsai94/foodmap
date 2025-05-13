@@ -115,3 +115,6 @@ def map_view(request):
         'restaurants': restaurants,
         'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
     })
+
+def home_redirect(request):
+    return redirect('checkin_list')

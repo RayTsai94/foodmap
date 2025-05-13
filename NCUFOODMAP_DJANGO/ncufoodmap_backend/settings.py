@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'restaurants',
     'food_analysis',
+    'checkin',
     'crispy_forms',
     'crispy_bootstrap5',
     'rest_framework',

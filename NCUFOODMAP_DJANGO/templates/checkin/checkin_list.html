@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}我的美食打卡紀錄{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-10 col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h3 class="card-title mb-4 text-center">📅 我的美食打卡紀錄</h3>
+        {% if checkins %}
+        <ul class="list-group">
+          {% for c in checkins %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{{ c.date }}</strong>｜{{ c.restaurant_name }}｜{{ c.item }}
+              <span class="badge bg-warning text-dark ms-2">{{ c.rating }}★</span>
+              <span class="badge bg-light text-dark ms-1">{{ c.get_mood_display }}</span>
+            </div>
+            <div>
+              <a href="{% url 'checkin_detail' pk=c.pk %}" class="btn btn-sm btn-outline-primary">詳情</a>
+              <a href="{% url 'checkin_update' pk=c.pk %}" class="btn btn-sm btn-outline-success">編輯</a>
+              <a href="{% url 'checkin_delete' pk=c.pk %}" class="btn btn-sm btn-outline-danger">刪除</a>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-center">目前尚無打卡紀錄，<a href="{% url 'checkin_create' %}">立即新增！</a></p>
+        {% endif %}
+        <div class="d-grid gap-2 mt-4">
+          <a href="{% url 'checkin_create' %}" class="btn btn-warning btn-lg">新增美食打卡</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

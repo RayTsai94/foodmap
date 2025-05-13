@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}打卡詳細內容{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h3 class="card-title mb-4 text-center">🍽️ 打卡詳細內容</h3>
+        <ul class="list-group list-group-flush mb-3">
+          <li class="list-group-item"><strong>用餐日期：</strong>{{ checkin.date }}</li>
+          <li class="list-group-item"><strong>餐廳名稱：</strong>{{ checkin.restaurant_name }}</li>
+          <li class="list-group-item"><strong>品項：</strong>{{ checkin.item }}</li>
+          <li class="list-group-item"><strong>價格：</strong>{{ checkin.price }}</li>
+          <li class="list-group-item"><strong>評分：</strong>{{ checkin.rating }} 星</li>
+          <li class="list-group-item"><strong>心情標籤：</strong>{{ checkin.get_mood_display }}</li>
+          <li class="list-group-item"><strong>心得：</strong>{{ checkin.comment|linebreaksbr }}</li>
+          {% if checkin.photo %}
+          <li class="list-group-item"><strong>照片：</strong><br><img src="{{ checkin.photo.url }}" class="img-fluid rounded mt-2" style="max-height:300px;"></li>
+          {% endif %}
+        </ul>
+        <div class="d-grid gap-2">
+          <a href="/checkin/new/" class="btn btn-outline-warning">再打一次卡</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 
