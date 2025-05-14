@@ -37,4 +37,10 @@ class RestaurantFilterForm(forms.Form):
         ],
         required=False,
         label="最低評分",
+    )
+
+    name_or_address = forms.CharField(
+        required=False,
+        label="關鍵字搜尋",
+        widget=forms.TextInput(attrs={'placeholder': '餐廳名稱或地址'})
     ) 

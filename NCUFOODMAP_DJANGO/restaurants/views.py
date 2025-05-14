@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.db.models import Avg
+from django.db.models import Avg, Q
 from django.core.paginator import Paginator
 from django.conf import settings
 from .models import Restaurant, Category, Review, MenuItem
@@ -39,6 +39,13 @@ def restaurant_list(request):
             restaurants = restaurants.annotate(
                 avg_rating=Avg('reviews__rating')
             ).filter(avg_rating__gte=min_rating)
+        
+        # 關鍵字搜尋
+        name_or_address = filter_form.cleaned_data.get('name_or_address')
+        if name_or_address:
+            restaurants = restaurants.filter(
+                Q(name__icontains=name_or_address) | Q(address__icontains=name_or_address)
+            )
     
     # 分頁
     paginator = Paginator(restaurants, 12)  # 每頁12個餐廳

@@ -12,6 +12,11 @@
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" id="filter-form">
+                <div class="row mb-2">
+                    <div class="col-md-12">
+                        {{ filter_form.name_or_address|as_crispy_field }}
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-md-5">
                         {{ filter_form.category|as_crispy_field }}
