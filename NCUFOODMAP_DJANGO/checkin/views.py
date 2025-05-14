@@ -137,8 +137,11 @@ def restaurant_ranking(request):
     cache_key = f"restaurant_ranking_{now.year}_{now.month}"
     data = cache.get(cache_key)
     if not data:
-        top_rated = Checkin.objects.filter(date__year=now.year, date__month=now.month)
-        top_rated = top_rated.values('restaurant_name').annotate(
+        top_rated = Checkin.objects.filter(
+            date__year=now.year,
+            date__month=now.month,
+            rating__gte=1  # 只計算有效分數
+        ).values('restaurant_name').annotate(
             avg_rating=Avg('rating'), count=Count('id')
         ).filter(count__gte=2).order_by('-avg_rating')[:10]
         data = list(top_rated)
