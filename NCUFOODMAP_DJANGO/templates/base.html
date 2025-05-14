@@ -44,6 +44,16 @@
                         <a class="nav-link" href="{% url 'restaurant_list' %}">餐廳列表</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{% url 'checkin_list' %}">打卡</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="rankingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">排行榜</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'user_ranking' %}">用戶排行</a></li>
+                            <li><a class="dropdown-item" href="{% url 'restaurant_ranking' %}">店家排行</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{% url 'map' %}">地圖</a>
                     </li>
                     <li class="nav-item dropdown">
