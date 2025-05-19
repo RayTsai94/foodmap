@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>文章內容</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 40px;
+      background-color: #FFF9ED;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    .meta {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .content {
+      white-space: pre-wrap;
+      line-height: 1.6;
+      font-size: 16px;
+      margin-bottom: 30px;
+    }
+
+    .comments-section {
+      margin-top: 40px;
+    }
+
+    .comment {
+      border-top: 1px solid #eee;
+      padding-top: 15px;
+      margin-top: 15px;
+    }
+
+    .comment-meta {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .comment-content {
+      white-space: pre-wrap;
+    }
+
+    .comment-form {
+      margin-top: 30px;
+    }
+
+    .comment-form input, .comment-form textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    .comment-form button {
+      padding: 8px 16px;
+      background-color: #FF914D;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .comment-form button:hover {
+      background-color: #e67930;
+    }
+
+    .back-link {
+      display: block;
+      margin-top: 40px;
+      text-align: center;
+      color: #FF914D;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    .action-buttons button {
+      margin-left: 8px;
+      font-size: 12px;
+      color: #f44;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .action-buttons button:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container" id="postContent"></div>
+
+<script>
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
+
+  const postId = getQueryParam("id");
+  const postList = JSON.parse(localStorage.getItem("posts")) || [];
+  const commentKey = `comments_${postId}`;
+  let comments = JSON.parse(localStorage.getItem(commentKey)) || [];
+  const currentUser = localStorage.getItem("currentUser");
+
+  function displayPost() {
+    const post = postList[postId];
+    const container = document.getElementById("postContent");
+
+    if (!post) {
+      container.innerHTML = "<p style='color:red;'>找不到這篇文章。</p>";
+      return;
+    }
+
+    let editDeleteBtns = "";
+    if (currentUser && currentUser === post.username) {
+      editDeleteBtns = `
+        <div class="action-buttons">
+          <button onclick="editPost()">編輯文章</button>
+          <button onclick="deletePost()">刪除文章</button>
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <h1>${post.title}</h1>
+      ${editDeleteBtns}
+      <div class="meta">發文者：${post.username || "匿名"} ｜ 發布時間：${new Date(post.timestamp).toLocaleString()}</div>
+      <div class="content" id="postContentText">${post.content}</div>
+
+      <div class="comments-section">
+        <h3>留言區</h3>
+        <div id="commentList"></div>
+
+        <div class="comment-form">
+          <input type="text" id="commenter" placeholder="你的暱稱（可留空）" value="${currentUser || ''}" />
+          <textarea id="commentText" rows="4" placeholder="輸入你的留言..."></textarea>
+          <button onclick="addComment()">發布留言</button>
+        </div>
+      </div>
+
+      <a href="article.html" class="back-link">← 回到首頁</a>
+    `;
+
+    renderComments();
+  }
+
+  function renderComments() {
+    const commentListDiv = document.getElementById("commentList");
+    commentListDiv.innerHTML = "";
+
+    comments.sort((a, b) => a.timestamp - b.timestamp).forEach(comment => {
+      const commentHTML = document.createElement("div");
+      commentHTML.className = "comment";
+
+      let controls = "";
+      if (currentUser && comment.name === currentUser) {
+        controls = `
+          <span class="action-buttons">
+            <button onclick="editComment('${comment.id}')">編輯</button>
+            <button onclick="deleteComment('${comment.id}')">刪除</button>
+          </span>
+        `;
+      }
+
+      commentHTML.innerHTML = `
+        <div class="comment-meta">
+          ${comment.name || "匿名"} ｜ ${new Date(comment.timestamp).toLocaleString()}
+          ${controls}
+        </div>
+        <div class="comment-content" id="comment-${comment.id}">${comment.text}</div>
+      `;
+
+      commentListDiv.appendChild(commentHTML);
+    });
+  }
+
+  function addComment() {
+    const name = document.getElementById("commenter").value.trim();
+    const text = document.getElementById("commentText").value.trim();
+
+    if (text === "") {
+      alert("請輸入留言內容！");
+      return;
+    }
+
+    const newComment = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name,
+      text,
+      timestamp: Date.now()
+    };
+
+    comments.push(newComment);
+    localStorage.setItem(commentKey, JSON.stringify(comments));
+
+    document.getElementById("commentText").value = "";
+
+    renderComments();
+  }
+
+  function deleteComment(id) {
+    if (!confirm("確定要刪除這則留言嗎？")) return;
+
+    comments = comments.filter(comment => comment.id !== id);
+    localStorage.setItem(commentKey, JSON.stringify(comments));
+    renderComments();
+  }
+
+  function editComment(id) {
+    const comment = comments.find(c => c.id === id);
+    const newText = prompt("請修改留言內容：", comment.text);
+    if (newText !== null) {
+      comment.text = newText;
+      localStorage.setItem(commentKey, JSON.stringify(comments));
+      renderComments();
+    }
+  }
+
+  function editPost() {
+    const post = postList[postId];
+    const newContent = prompt("請修改文章內容：", post.content);
+    if (newContent !== null) {
+      post.content = newContent;
+      postList[postId] = post;
+      localStorage.setItem("posts", JSON.stringify(postList));
+      displayPost();
+    }
+  }
+
+  function deletePost() {
+    if (!confirm("確定要刪除這篇文章嗎？")) return;
+
+    postList.splice(postId, 1);
+    localStorage.setItem("posts", JSON.stringify(postList));
+    window.location.href = "article.html";
+  }
+
+  window.onload = displayPost;
+</script>
+
+</body>
+</html>
