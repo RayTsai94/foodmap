@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ restaurant.name }} - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<!-- 餐廳頭部區域 -->
+<div class="restaurant-header" style="background-image: url('{% if restaurant.image %}{{ restaurant.image.url }}{% else %}{% static 'img/default-restaurant.jpg' %}{% endif %}');">
+    <div class="restaurant-header-overlay">
+        <div class="container">
+            <h1 class="display-4 fw-bold">{{ restaurant.name }}</h1>
+            <div class="mb-2">
+                {% for category in restaurant.categories.all %}
+                    <span class="badge bg-secondary">{{ category.name }}</span>
+                {% endfor %}
+            </div>
+            <div class="rating fs-5 mb-2">
+                {% with ''|center:5 as range %}
+                    {% for _ in range %}
+                        {% if forloop.counter <= avg_rating|floatformat:"0" %}
+                            <i class="fas fa-star"></i>
+                        {% else %}
+                            <i class="far fa-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                {% endwith %}
+                <span class="ms-1 text-white">{{ avg_rating|floatformat:1 }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <!-- 餐廳資訊 -->
+        <div class="col-lg-8">
+            <div class="restaurant-info mb-4">
+                <h2 class="mb-4">餐廳資訊</h2>
+                <p><i class="fas fa-map-marker-alt me-2 text-primary"></i> {{ restaurant.address }}</p>
+                {% if restaurant.phone %}
+                    <p><i class="fas fa-phone me-2 text-primary"></i> {{ restaurant.phone }}</p>
+                {% endif %}
+                {% if restaurant.website %}
+                    <p><i class="fas fa-globe me-2 text-primary"></i> <a href="{{ restaurant.website }}" target="_blank">{{ restaurant.website }}</a></p>
+                {% endif %}
+                
+                {% if restaurant.description %}
+                    <h5 class="mt-4">關於餐廳</h5>
+                    <p>{{ restaurant.description }}</p>
+                {% endif %}
+            </div>
+
+            <!-- 菜單項目 -->
+            <div class="mb-5">
+                <h2 class="mb-4">菜單</h2>
+                {% for item in menu_items %}
+                    <div class="menu-item">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" class="menu-item-image" alt="{{ item.name }}">
+                        {% else %}
+                            <img src="{% static 'img/default-food.jpg' %}" class="menu-item-image" alt="{{ item.name }}">
+                        {% endif %}
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5>{{ item.name }}</h5>
+                                <span class="menu-item-price">${{ item.price }}</span>
+                            </div>
+                            {% if item.description %}
+                                <p class="text-muted">{{ item.description }}</p>
+                            {% endif %}
+                            <div>
+                                {% if item.is_vegetarian %}
+                                    <span class="badge bg-success">素食</span>
+                                {% endif %}
+                                {% if item.is_spicy %}
+                                    <span class="badge bg-danger">辣</span>
+                                {% endif %}
+                                <a href="{% url 'menu_item_detail' item.pk %}" class="btn btn-sm btn-outline-primary mt-2">詳細資訊</a>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="alert alert-info">
+                        尚未添加菜單項目。
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- 評論區 -->
+            <div class="mb-5">
+                <h2 class="mb-4">顧客評論</h2>
+                
+                <!-- 評論表單 -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">添加您的評論</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ review_form.author|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ review_form.rating.label }}</label>
+                                        <div class="rating-stars mb-2">
+                                            {% for radio in review_form.rating %}
+                                                <div class="form-check form-check-inline">
+                                                    {{ radio.tag }}
+                                                    <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                        <i class="fas fa-star rating-star text-muted"></i>
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="form-text">{{ review_form.rating.help_text }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    {{ review_form.comment|as_crispy_field }}
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">提交評論</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- 評論列表 -->
+                {% for review in reviews %}
+                    <div class="review-card">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">{{ review.author }}</h5>
+                            <div class="rating">
+                                {% with ''|center:5 as range %}
+                                    {% for _ in range %}
+                                        {% if forloop.counter <= review.rating %}
+                                            <i class="fas fa-star"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <p class="text-muted small mb-2">{{ review.created_at|date:"Y/m/d H:i" }}</p>
+                        <p>{{ review.comment }}</p>
+                    </div>
+                {% empty %}
+                    <div class="alert alert-info">
+                        尚未有評論。成為第一個評論的人！
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- 側邊欄 -->
+        <div class="col-lg-4">
+            <!-- 地圖卡片 -->
+            {% if restaurant.lat and restaurant.lng %}
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">位置</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="restaurant-location-map" style="height: 300px;"></div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="https://www.google.com/maps/dir/?api=1&destination={{ restaurant.lat }},{{ restaurant.lng }}" 
+                           class="btn btn-outline-primary w-100" target="_blank">
+                            <i class="fas fa-directions me-2"></i>導航到這裡
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- 營業時間卡片 -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">營業時間</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>週一 - 週五</span>
+                            <span>11:00 - 21:00</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>週六 - 週日</span>
+                            <span>10:00 - 22:00</span>
+                        </li>
+                    </ul>
+                    <p class="text-muted small mt-3">
+                        註：營業時間為示例，請以實際情況為準。
+                    </p>
+                </div>
+            </div>
+            
+            <!-- 分享卡片 -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">分享</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" 
+                           class="btn btn-outline-primary" target="_blank">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text=我發現了一家很棒的餐廳：{{ restaurant.name }}" 
+                           class="btn btn-outline-info" target="_blank">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="https://line.me/R/msg/text/?我發現了一家很棒的餐廳：{{ restaurant.name }}%0D%0A{{ request.build_absolute_uri }}" 
+                           class="btn btn-outline-success" target="_blank">
+                            <i class="fab fa-line"></i>
+                        </a>
+                        <button class="btn btn-outline-secondary copy-link" data-url="{{ request.build_absolute_uri }}">
+                            <i class="fas fa-link"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if restaurant.lat and restaurant.lng %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 複製連結功能
+        const copyButtons = document.querySelectorAll('.copy-link');
+        copyButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const url = this.getAttribute('data-url');
+                navigator.clipboard.writeText(url).then(() => {
+                    // 顯示成功訊息
+                    this.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="fas fa-link"></i>';
+                    }, 2000);
+                });
+            });
+        });
+        
+        // 初始化地圖
+        const restaurantLocation = {
+            lat: {{ restaurant.lat }},
+            lng: {{ restaurant.lng }}
+        };
+        
+        const map = new google.maps.Map(document.getElementById('restaurant-location-map'), {
+            center: restaurantLocation,
+            zoom: 16,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: true,
+        });
+        
+        const marker = new google.maps.Marker({
+            position: restaurantLocation,
+            map: map,
+            title: "{{ restaurant.name }}",
+            animation: google.maps.Animation.DROP
+        });
+        
+        const infoWindow = new google.maps.InfoWindow({
+            content: `
+                <div class="map-info-window">
+                    <h5>{{ restaurant.name }}</h5>
+                    <p>{{ restaurant.address }}</p>
+                </div>
+            `
+        });
+        
+        marker.addListener('click', () => {
+            infoWindow.open(map, marker);
+        });
+    });
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}" async defer></script>
+{% endif %}
+{% endblock %} 

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}打卡詳細內容{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card shadow rounded-4 border-0 mb-4">
+      <div class="card-body bg-light rounded-4">
+        <h3 class="card-title mb-4 text-center" style="color:#E38B29;"><i class="fas fa-utensils me-2"></i>打卡詳細內容</h3>
+        <ul class="list-group list-group-flush mb-3">
+          <li class="list-group-item bg-white border-0"><strong class="me-2"><i class="fas fa-user text-primary"></i> 用戶：</strong>{{ checkin.user.username }}</li>
+          <li class="list-group-item bg-white border-0"><strong class="me-2"><i class="fas fa-calendar-day text-warning"></i> 用餐日期：</strong>{{ checkin.date }}</li>
+          <li class="list-group-item bg-white border-0"><strong class="me-2"><i class="fas fa-store text-warning"></i> 餐廳名稱：</strong>{{ checkin.restaurant_name }}</li>
+          <li class="list-group-item bg-white border-0"><strong class="me-2"><i class="fas fa-hamburger text-warning"></i> 品項：</strong>{{ checkin.item }}</li>
+          <li class="list-group-item bg-white border-0"><strong class="me-2"><i class="fas fa-dollar-sign text-warning"></i> 價格：</strong>{{ checkin.price }}</li>
+          <li class="list-group-item bg-white border-0"><strong class="me-2"><i class="fas fa-star text-warning"></i> 評分：</strong>{{ checkin.rating }} 星</li>
+          <li class="list-group-item bg-white border-0">
+            <strong class="me-2"><i class="fas fa-smile text-warning"></i> 心情標籤：</strong>
+            {% if checkin.mood == 'happy' %}<span style="color:#ffb300;">😄 開心</span>{% endif %}
+            {% if checkin.mood == 'soso' %}<span style="color:#6c757d;">😐 普通</span>{% endif %}
+            {% if checkin.mood == 'sad' %}<span style="color:#007bff;">😢 難過</span>{% endif %}
+            {% if checkin.mood == 'angry' %}<span style="color:#e74c3c;">😠 生氣</span>{% endif %}
+            {% if checkin.mood == 'surprised' %}<span style="color:#8e44ad;">😲 驚訝</span>{% endif %}
+          </li>
+          <li class="list-group-item bg-white border-0"><strong class="me-2"><i class="fas fa-comment-dots text-warning"></i> 心得：</strong>{{ checkin.comment|linebreaksbr }}</li>
+          {% if checkin.photo %}
+          <li class="list-group-item bg-white border-0"><strong class="me-2"><i class="fas fa-image text-warning"></i> 照片：</strong><br>
+            <a href="{{ checkin.photo.url }}" target="_blank">
+              <img src="{{ checkin.photo.url }}" class="img-fluid rounded mt-2 shadow" style="max-height:300px;cursor:zoom-in;">
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+        <div class="d-grid gap-2">
+          <a href="{% url 'checkin_update' pk=checkin.pk %}" class="btn btn-success rounded-pill"><i class="fas fa-edit me-2"></i>編輯</a>
+          <a href="{% url 'checkin_delete' pk=checkin.pk %}" class="btn btn-danger rounded-pill"><i class="fas fa-trash-alt me-2"></i>刪除</a>
+          <a href="{% url 'checkin_list' %}" class="btn btn-outline-warning rounded-pill">返回打卡紀錄</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 
