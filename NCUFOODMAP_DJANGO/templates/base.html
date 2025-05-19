@@ -1,0 +1,162 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NCU 食物地圖{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- 自訂 CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+    <style>
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .user-menu {
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 導航欄 -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-utensils me-2"></i>NCU 食物地圖
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}">首頁</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'restaurant_list' %}">餐廳列表</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'checkin_list' %}">打卡</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="rankingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">排行榜</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'user_ranking' %}">用戶排行</a></li>
+                            <li><a class="dropdown-item" href="{% url 'restaurant_ranking' %}">店家排行</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'map' %}">地圖</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            食物分析
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'nutrition_dashboard' %}">營養儀表板</a></li>
+                            <li><a class="dropdown-item" href="{% url 'dietary_preferences' %}">飲食偏好</a></li>
+                            <li><a class="dropdown-item" href="{% url 'allergen_info' %}">過敏原資訊</a></li>
+                            <li><a class="dropdown-item" href="{% url 'ingredient_analysis' %}">食材分析</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'ai_advisor' %}"><i class="fas fa-robot me-2"></i>智能營養顧問</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <form class="d-flex me-2" action="{% url 'restaurant_list' %}" method="get">
+                    <input class="form-control me-2" type="search" placeholder="搜尋餐廳" name="q">
+                    <button class="btn btn-outline-light" type="submit">搜尋</button>
+                </form>
+                
+                <!-- 用戶登入/註冊區域 -->
+                {% if user.is_authenticated %}
+                    <div class="dropdown">
+                        <img src="{% if user.socialaccount_set.all.0.get_avatar_url %}{{ user.socialaccount_set.all.0.get_avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=random{% endif %}" 
+                             alt="{{ user.username }}" 
+                             class="user-avatar" 
+                             data-bs-toggle="dropdown" 
+                             aria-expanded="false">
+                        <ul class="dropdown-menu dropdown-menu-end user-menu">
+                            <li class="dropdown-item-text">
+                                <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
+                                <small class="text-muted">{{ user.email }}</small>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'home' %}"><i class="fas fa-user me-2"></i>個人資料</a></li>
+                            <li><a class="dropdown-item" href="{% url 'home' %}"><i class="fas fa-history me-2"></i>收藏餐廳</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'googleOauth:logout' %}"><i class="fas fa-sign-out-alt me-2"></i>登出</a></li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <a href="{% url 'googleOauth:login' %}" class="btn btn-outline-light">登入/註冊</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- 頁面內容 -->
+    <main class="container py-4">
+        {% if messages %}
+            <div class="row">
+                <div class="col-12">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- 頁腳 -->
+    <footer class="text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>關於 NCU 食物地圖</h5>
+                    <p>NCU 食物地圖是一個為中央大學師生提供餐廳信息和食物營養分析的平台。</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>快速連結</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'home' %}" class="text-light">首頁</a></li>
+                        <li><a href="{% url 'restaurant_list' %}" class="text-light">餐廳列表</a></li>
+                        <li><a href="{% url 'map' %}" class="text-light">地圖</a></li>
+                        <li><a href="{% url 'nutrition_dashboard' %}" class="text-light">食物分析</a></li>
+                        <li><a href="{% url 'ai_advisor' %}" class="text-light">智能營養顧問</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>聯絡我們</h5>
+                    <address>
+                        <p><i class="fas fa-map-marker-alt me-2"></i>桃園市中壢區中大路300號</p>
+                        <p><i class="fas fa-envelope me-2"></i><a href="mailto:contact@ncufoodmap.com" class="text-light">contact@ncufoodmap.com</a></p>
+                    </address>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <p>&copy; {% now "Y" %} NCU 食物地圖。保留所有權利。</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- 自訂 JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 
