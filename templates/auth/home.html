@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load socialaccount %}
+
+{% block title %}登入 | NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h2 class="text-center mb-4">歡迎登入 NCU 食物地圖</h2>
+                
+                {% if user.is_authenticated %}
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <img src="{% if user.socialaccount_set.all.0.get_avatar_url %}{{ user.socialaccount_set.all.0.get_avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=random&size=100{% endif %}" 
+                                 alt="{{ user.username }}" 
+                                 class="rounded-circle" 
+                                 style="width: 100px; height: 100px; object-fit: cover;">
+                        </div>
+                        <h3>歡迎, {{ user.get_full_name|default:user.username }}</h3>
+                        <p class="text-muted">{{ user.email }}</p>
+                        <div class="mt-4">
+                            <a href="{% url 'home' %}" class="btn btn-primary">前往首頁</a>
+                            <a href="{% url 'googleOauth:logout' %}" class="btn btn-outline-secondary ms-2">登出</a>
+                        </div>
+                    </div>
+                {% else %}
+                    {% if has_google_provider %}
+                        <div class="text-center mb-4">
+                            <p class="text-muted">使用以下方式登入，探索中央大學美食世界</p>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a href="{% provider_login_url 'google' %}" class="btn btn-lg btn-outline-primary">
+                                <i class="fab fa-google me-2"></i> 使用 Google 帳號登入
+                            </a>
+                        </div>
+                        <div class="text-center mt-4">
+                            <p class="small text-muted">
+                                登入即表示您同意我們的<a href="#">服務條款</a>和<a href="#">隱私政策</a>
+                            </p>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <h4 class="alert-heading">尚未設置 Google 登入</h4>
+                            <p>管理員需要完成 Google OAuth 設置才能啟用登入功能。</p>
+                            <hr>
+                            <p class="mb-0">
+                                請聯繫網站管理員或參考 <a href="https://django-allauth.readthedocs.io/en/latest/providers.html#google" target="_blank">django-allauth 文檔</a> 進行設置。
+                            </p>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="/" class="btn btn-primary">返回首頁</a>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
