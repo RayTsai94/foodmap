@@ -177,6 +177,9 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 
+#點擊app登入頁面
+LOGIN_URL = '/auth'
+
 # 登入和登出重定向設定
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'

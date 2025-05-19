@@ -111,7 +111,7 @@ def checkin_delete(request, pk):
         messages.success(request, '打卡紀錄已刪除！')
         return redirect('checkin_list')
     return render(request, 'checkin/checkin_confirm_delete.html', {'checkin': checkin})
-
+# 可能需要改一下
 @login_required
 def user_ranking(request):
     from django.db.models import Count
