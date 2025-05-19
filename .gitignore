@@ -1,1 +1,3 @@
 json_google_login.json
+__pycache__/
+*.pyc
