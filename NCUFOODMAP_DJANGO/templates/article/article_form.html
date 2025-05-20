@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if article %}編輯文章{% else %}發布文章{% endif %} - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">{% if article %}編輯文章{% else %}發布文章{% endif %}</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="title" class="form-label">標題</label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ article.title|default:'' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="content" class="form-label">內容</label>
+                            <textarea class="form-control" id="content" name="content" rows="10" required>{{ article.content|default:'' }}</textarea>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="{% if article %}{% url 'article_detail' article.id %}{% else %}{% url 'article_list' %}{% endif %}" 
+                               class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>返回
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>{% if article %}更新{% else %}發布{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -26,6 +26,7 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('auth/', include('googleOauth.urls')),
     path('checkin/', include('checkin.urls')),
+    path('article/', include('article.urls')),
 ]
 
 # 媒體文件服務設定（僅在開發環境下）
