@@ -32,3 +32,5 @@ def logout_view(request):
     messages.success(request, "您已成功登出")
     return redirect('/')
 
+
+

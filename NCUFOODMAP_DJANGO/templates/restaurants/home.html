@@ -153,7 +153,7 @@ function initMap() {
           map: map,
           title: checkin.restaurant_name,
           icon: {
-            url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+            url: "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png",
             scaledSize: new google.maps.Size(32, 32),
           },
         });
@@ -167,6 +167,7 @@ function initMap() {
               <span>${checkin.price} 元</span>
               <p>${checkin.comment}</p>
             </div>`;
+            
           infoWindow.setContent(content);
           infoWindow.open(map, marker);
         });
