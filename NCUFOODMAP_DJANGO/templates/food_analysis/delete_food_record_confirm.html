@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}確認刪除食物記錄 - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card mt-5 mb-5">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">確認刪除</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <p><i class="fas fa-exclamation-triangle me-2"></i>您確定要刪除以下食物記錄嗎？此操作無法撤銷。</p>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {% if record.image %}
+                                        <img src="{{ record.image.url }}" class="img-fluid rounded" alt="{{ record.name }}">
+                                    {% else %}
+                                        <img src="{% static 'img/default-food.jpg' %}" class="img-fluid rounded" alt="{{ record.name }}">
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-8">
+                                    <h5 class="card-title">{{ record.name }}</h5>
+                                    <p class="text-muted"><small>記錄時間: {{ record.date_consumed|date:"Y/m/d H:i" }}</small></p>
+                                    
+                                    {% if record.description %}
+                                        <p>{{ record.description }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="row text-center mt-3">
+                                        {% if record.calories %}
+                                            <div class="col-3">
+                                                <p class="mb-0 fw-bold">{{ record.calories }}</p>
+                                                <small>卡路里</small>
+                                            </div>
+                                        {% endif %}
+                                        {% if record.protein %}
+                                            <div class="col-3">
+                                                <p class="mb-0 fw-bold">{{ record.protein }}</p>
+                                                <small>蛋白質</small>
+                                            </div>
+                                        {% endif %}
+                                        {% if record.carbs %}
+                                            <div class="col-3">
+                                                <p class="mb-0 fw-bold">{{ record.carbs }}</p>
+                                                <small>碳水</small>
+                                            </div>
+                                        {% endif %}
+                                        {% if record.fat %}
+                                            <div class="col-3">
+                                                <p class="mb-0 fw-bold">{{ record.fat }}</p>
+                                                <small>脂肪</small>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'user_food_record' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>取消
+                        </a>
+                        <form method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt me-2"></i>確認刪除
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}飲食偏好 - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">飲食偏好分析</h1>
+    <p class="lead mb-5">尋找符合您飲食習慣或需求的餐點選擇</p>
+    
+    <!-- 飲食偏好總覽 -->
+    <div class="analysis-card mb-5">
+        <h2 class="mb-4">常見飲食偏好</h2>
+        <div class="row">
+            <div class="col-md-3 mb-4">
+                <div class="card text-center p-3 h-100">
+                    <i class="fas fa-leaf fa-3x text-success mb-3"></i>
+                    <h5>素食</h5>
+                    <p class="small text-muted">不含肉類、魚類和海鮮的餐點</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card text-center p-3 h-100">
+                    <i class="fas fa-seedling fa-3x text-success mb-3"></i>
+                    <h5>全素</h5>
+                    <p class="small text-muted">不含任何動物製品，包括蛋奶</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card text-center p-3 h-100">
+                    <i class="fas fa-wheat-awn-circle-exclamation fa-3x text-warning mb-3"></i>
+                    <h5>無麩質</h5>
+                    <p class="small text-muted">適合乳糜瀉或麩質敏感人士</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card text-center p-3 h-100">
+                    <i class="fas fa-drumstick-bite fa-3x text-danger mb-3"></i>
+                    <h5>低碳水化合物</h5>
+                    <p class="small text-muted">適合生酮飲食或低碳飲食者</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 符合飲食偏好的菜單列表 -->
+    {% for item in preferences_with_items %}
+        <div class="analysis-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3>{{ item.preference.name }}</h3>
+                <span class="badge bg-primary p-2">找到 {{ item.total_count }} 個符合的菜單項目</span>
+            </div>
+            <p class="mb-4">{{ item.preference.description }}</p>
+            
+            <div class="row">
+                {% for menu_item in item.items %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            {% if menu_item.image %}
+                                <img src="{{ menu_item.image.url }}" class="card-img-top" alt="{{ menu_item.name }}">
+                            {% else %}
+                                <img src="{% static 'img/default-food.jpg' %}" class="card-img-top" alt="{{ menu_item.name }}">
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ menu_item.name }}</h5>
+                                <p class="card-text text-muted">{{ menu_item.restaurant.name }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-success">適合{{ item.preference.name }}</span>
+                                    <a href="{% url 'menu_item_detail' menu_item.pk %}" class="btn btn-sm btn-primary">查看詳情</a>
+                                </div>
+                                {% if menu_item.nutrition %}
+                                <div class="mt-3">
+                                    <div class="d-flex justify-content-between small">
+                                        <span>熱量: {{ menu_item.nutrition.calories }} 卡</span>
+                                        <span>蛋白質: {{ menu_item.nutrition.protein }}g</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            目前尚未添加符合{{ item.preference.name }}的菜單項目。
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            {% if item.total_count > 5 %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'restaurant_list' %}?preference={{ item.preference.id }}" class="btn btn-outline-primary">
+                        查看全部 {{ item.total_count }} 個符合的菜單項目
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    {% empty %}
+        <div class="alert alert-info">
+            尚未添加任何飲食偏好信息。請稍後再來查看。
+        </div>
+    {% endfor %}
+    
+    <!-- 個人飲食分析區塊 -->
+    <div class="card mt-5">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">個人飲食分析與建議</h4>
+        </div>
+        <div class="card-body">
+            <p class="mb-4">根據您的飲食偏好，輸入今日所食用的餐點，獲取個人化的飲食分析和建議。</p>
+            
+            <form class="mb-4">
+                <div class="mb-3">
+                    <label for="meal" class="form-label">請輸入今日用餐內容</label>
+                    <textarea class="form-control" id="meal" rows="3" placeholder="例如：起司漢堡、薯條、可樂..."></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">飲食偏好</label>
+                    <div class="row">
+                        <div class="col-md-3 col-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="vegetarian">
+                                <label class="form-check-label" for="vegetarian">素食</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="vegan">
+                                <label class="form-check-label" for="vegan">全素</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="gluten-free">
+                                <label class="form-check-label" for="gluten-free">無麩質</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="low-carb">
+                                <label class="form-check-label" for="low-carb">低碳水</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary" id="analyzeButton">分析我的飲食</button>
+            </form>
+            
+            <div class="analysis-result d-none" id="analysisResult">
+                <h5 class="mb-3">飲食分析結果</h5>
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-box">
+                            <h4 id="caloriesResult">--</h4>
+                            <p>估計熱量 (卡路里)</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-box">
+                            <h4 id="proteinResult">--</h4>
+                            <p>估計蛋白質 (克)</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-box">
+                            <h4 id="carbsResult">--</h4>
+                            <p>估計碳水 (克)</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-box">
+                            <h4 id="fatResult">--</h4>
+                            <p>估計脂肪 (克)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <h5 class="mb-3">建議</h5>
+                <div class="alert alert-primary" id="suggestion">
+                    請輸入您的飲食內容以獲取建議。
+                </div>
+                
+                <h5 class="mb-3">推薦菜單項目</h5>
+                <div class="row" id="recommendedItems">
+                    <!-- 推薦項目將動態生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const analyzeButton = document.getElementById('analyzeButton');
+        const analysisResult = document.getElementById('analysisResult');
+        const caloriesResult = document.getElementById('caloriesResult');
+        const proteinResult = document.getElementById('proteinResult');
+        const carbsResult = document.getElementById('carbsResult');
+        const fatResult = document.getElementById('fatResult');
+        const suggestion = document.getElementById('suggestion');
+        const recommendedItems = document.getElementById('recommendedItems');
+        
+        analyzeButton.addEventListener('click', function() {
+            const mealInput = document.getElementById('meal').value;
+            
+            if (mealInput.trim() === '') {
+                alert('請輸入您的用餐內容');
+                return;
+            }
+            
+            // 顯示分析結果區塊
+            analysisResult.classList.remove('d-none');
+            
+            // 模擬分析結果（實際應用中應該通過API獲取）
+            const calories = Math.floor(Math.random() * 500) + 500;
+            const protein = Math.floor(Math.random() * 20) + 15;
+            const carbs = Math.floor(Math.random() * 50) + 50;
+            const fat = Math.floor(Math.random() * 15) + 10;
+            
+            // 更新分析結果
+            caloriesResult.textContent = calories;
+            proteinResult.textContent = protein + 'g';
+            carbsResult.textContent = carbs + 'g';
+            fatResult.textContent = fat + 'g';
+            
+            // 生成建議
+            let suggestionText = '';
+            if (calories > 800) {
+                suggestionText += '您的餐點熱量較高，建議下一餐選擇低熱量的食物，如蔬菜沙拉、清湯等。';
+            } else {
+                suggestionText += '您的餐點熱量適中，繼續保持均衡飲食習慣。';
+            }
+            
+            if (protein < 20) {
+                suggestionText += ' 蛋白質攝取不足，建議增加瘦肉、豆類或乳製品的攝入。';
+            }
+            
+            if (carbs > 80) {
+                suggestionText += ' 碳水化合物攝取較多，建議控制澱粉類食物的份量。';
+            }
+            
+            if (fat > 20) {
+                suggestionText += ' 脂肪攝取較多，建議選擇低脂或無脂食品。';
+            }
+            
+            suggestion.textContent = suggestionText;
+            
+            // 模擬推薦菜單（實際應用中應該通過API獲取）
+            const recommendations = [
+                {
+                    name: '蔬菜沙拉',
+                    restaurant: '健康餐廳',
+                    image: 'img/default-food.jpg',
+                    calories: 250
+                },
+                {
+                    name: '烤雞胸肉',
+                    restaurant: '運動餐廳',
+                    image: 'img/default-food.jpg',
+                    calories: 350
+                },
+                {
+                    name: '鮭魚藜麥碗',
+                    restaurant: '營養餐廳',
+                    image: 'img/default-food.jpg',
+                    calories: 400
+                }
+            ];
+            
+            // 清空原有推薦
+            recommendedItems.innerHTML = '';
+            
+            // 添加推薦菜單
+            recommendations.forEach(item => {
+                const itemHtml = `
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <img src="{% static 'img/default-food.jpg' %}" class="card-img-top" alt="${item.name}">
+                            <div class="card-body">
+                                <h5 class="card-title">${item.name}</h5>
+                                <p class="card-text text-muted">${item.restaurant}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-success">${item.calories} 卡路里</span>
+                                    <button class="btn btn-sm btn-primary">查看詳情</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                recommendedItems.innerHTML += itemHtml;
+            });
+        });
+    });
+</script>
+{% endblock %} 

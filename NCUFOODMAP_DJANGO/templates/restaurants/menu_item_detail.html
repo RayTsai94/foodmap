@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ menu_item.name }} - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- 麵包屑導航 -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">首頁</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'restaurant_detail' menu_item.restaurant.id %}">{{ menu_item.restaurant.name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ menu_item.name }}</li>
+                </ol>
+            </nav>
+            
+            <!-- 菜單項詳情 -->
+            <div class="card mb-5">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        {% if menu_item.image %}
+                            <img src="{{ menu_item.image.url }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="{{ menu_item.name }}">
+                        {% else %}
+                            <img src="{% static 'img/default-food.jpg' %}" class="img-fluid rounded-start h-100 object-fit-cover" alt="{{ menu_item.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h2 class="card-title">{{ menu_item.name }}</h2>
+                                <h4 class="menu-item-price">${{ menu_item.price }}</h4>
+                            </div>
+                            
+                            <div class="my-3">
+                                {% if menu_item.is_vegetarian %}
+                                    <span class="badge bg-success me-1">素食</span>
+                                {% endif %}
+                                {% if menu_item.is_spicy %}
+                                    <span class="badge bg-danger me-1">辣</span>
+                                {% endif %}
+                                {% for preference in preferences %}
+                                    {% if preference.is_compatible %}
+                                        <span class="badge bg-info me-1">{{ preference.preference.name }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            
+                            {% if menu_item.description %}
+                                <p class="card-text">{{ menu_item.description }}</p>
+                            {% endif %}
+                            
+                            <p class="card-text"><small class="text-muted">來自 <a href="{% url 'restaurant_detail' menu_item.restaurant.id %}">{{ menu_item.restaurant.name }}</a></small></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 營養信息卡片 -->
+            {% if nutrition %}
+            <div class="card mb-5">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">營養成分</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="stat-box">
+                                <h3>{{ nutrition.calories }}</h3>
+                                <p>熱量 (卡路里)</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="stat-box">
+                                        <h3>{{ nutrition.protein }}g</h3>
+                                        <p>蛋白質</p>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-box">
+                                        <h3>{{ nutrition.fat }}g</h3>
+                                        <p>脂肪</p>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-box">
+                                        <h3>{{ nutrition.carbs }}g</h3>
+                                        <p>碳水化合物</p>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-box">
+                                        <h3>{{ nutrition.fiber|default:"--" }}g</h3>
+                                        <p>纖維</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 營養成分進度條 -->
+                    <div class="mt-4">
+                        <h5>每日營養所需百分比</h5>
+                        <div class="mb-3">
+                            <div class="progress-label">
+                                <span>蛋白質</span>
+                                <span>{{ nutrition.protein|floatformat:1 }}g / 50g</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: {{ nutrition.protein|floatformat:0 }}%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="progress-label">
+                                <span>碳水化合物</span>
+                                <span>{{ nutrition.carbs|floatformat:1 }}g / 300g</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-info" style="width: {{ nutrition.carbs|floatformat:0|divisibleby:3 }}%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="progress-label">
+                                <span>脂肪</span>
+                                <span>{{ nutrition.fat|floatformat:1 }}g / 65g</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-warning" style="width: {{ nutrition.fat|floatformat:0|divisibleby:0.65 }}%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="progress-label">
+                                <span>熱量</span>
+                                <span>{{ nutrition.calories }} / 2000 卡路里</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-danger" style="width: {{ nutrition.calories|floatformat:0|divisibleby:20 }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted small mt-3">
+                        註：每日營養所需基於一般成人2000卡路里飲食需求。個人需求可能因年齡、性別、活動水平等因素而異。
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- 過敏原和飲食偏好卡片 -->
+            {% if preferences %}
+            <div class="card mb-5">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">飲食偏好和過敏原</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="mb-3">適合的飲食偏好</h5>
+                            <ul class="list-group">
+                                {% for pref in preferences %}
+                                    {% if pref.is_compatible and pref.preference.type == 'DIET' %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            {{ pref.preference.name }}
+                                            <span class="badge bg-success rounded-pill"><i class="fas fa-check"></i></span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-3">過敏原資訊</h5>
+                            <ul class="list-group">
+                                {% for pref in preferences %}
+                                    {% if pref.preference.type == 'ALLERGY' %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            {{ pref.preference.name }}
+                                            {% if pref.is_compatible %}
+                                                <span class="badge bg-warning rounded-pill"><i class="fas fa-exclamation-triangle"></i> 含有</span>
+                                            {% else %}
+                                                <span class="badge bg-success rounded-pill"><i class="fas fa-check"></i> 不含</span>
+                                            {% endif %}
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- 食材卡片 -->
+            {% if ingredients %}
+            <div class="card mb-5">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">食材清單</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for ingredient_item in ingredients %}
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fas fa-carrot me-2 text-success"></i>
+                                <span>{{ ingredient_item.ingredient.name }}</span>
+                                {% if ingredient_item.amount %}
+                                    <span class="ms-auto badge bg-light text-dark">{{ ingredient_item.amount }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- 返回按鈕 -->
+            <div class="d-flex justify-content-between my-4">
+                <a href="{% url 'restaurant_detail' menu_item.restaurant.id %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>返回餐廳
+                </a>
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-home me-2"></i>返回首頁
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

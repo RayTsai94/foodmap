@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ article.title }} - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- 文章內容 -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h1 class="card-title mb-0">{{ article.title }}</h1>
+                        {% if user == article.author %}
+                        <div>
+                            <a href="{% url 'article_edit' article.id %}" class="btn btn-outline-primary btn-sm me-2">
+                                <i class="fas fa-edit me-1"></i>編輯
+                            </a>
+                            <a href="{% url 'article_delete' article.id %}" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-trash me-1"></i>刪除
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex align-items-center mb-4">
+                        <img src="{% if article.author.socialaccount_set.all.0.get_avatar_url %}{{ article.author.socialaccount_set.all.0.get_avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ article.author.get_full_name|default:article.author.username }}&background=random{% endif %}" 
+                             alt="{{ article.author.username }}" 
+                             class="rounded-circle me-2"
+                             style="width: 40px; height: 40px;">
+                        <div>
+                            <div class="fw-bold">{{ article.author.get_full_name|default:article.author.username }}</div>
+                            <small class="text-muted">{{ article.created_at|date:"Y/m/d H:i" }}</small>
+                        </div>
+                    </div>
+                    <div class="article-content">
+                        {{ article.content|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 評論區 -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">評論 ({{ article.comments.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'article_comment' article.id %}" class="mb-4">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <textarea name="content" class="form-control" rows="3" placeholder="寫下你的評論..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-1"></i>發表評論
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>請<a href="{% url 'googleOauth:login' %}" class="alert-link">登入</a>後發表評論
+                    </div>
+                    {% endif %}
+
+                    {% if article.comments.all %}
+                        {% for comment in article.comments.all %}
+                        <div class="d-flex mb-4">
+                            <img src="{% if comment.author.socialaccount_set.all.0.get_avatar_url %}{{ comment.author.socialaccount_set.all.0.get_avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ comment.author.get_full_name|default:comment.author.username }}&background=random{% endif %}" 
+                                 alt="{{ comment.author.username }}" 
+                                 class="rounded-circle me-2"
+                                 style="width: 40px; height: 40px;">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div>
+                                        <span class="fw-bold">{{ comment.author.get_full_name|default:comment.author.username }}</span>
+                                        <small class="text-muted ms-2">{{ comment.created_at|date:"Y/m/d H:i" }}</small>
+                                    </div>
+                                    {% if user == comment.author %}
+                                    <a href="{% url 'article_comment_delete' article.id comment.id %}" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                <p class="mb-0">{{ comment.content }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted my-4">
+                            <i class="fas fa-comments fa-2x mb-2"></i>
+                            <p>還沒有評論，來發表第一條評論吧！</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 側邊欄 -->
+        <div class="col-md-4">
+            <!-- 作者信息 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">作者信息</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{% if article.author.socialaccount_set.all.0.get_avatar_url %}{{ article.author.socialaccount_set.all.0.get_avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ article.author.get_full_name|default:article.author.username }}&background=random{% endif %}" 
+                         alt="{{ article.author.username }}" 
+                         class="rounded-circle mb-3"
+                         style="width: 100px; height: 100px;">
+                    <h5>{{ article.author.get_full_name|default:article.author.username }}</h5>
+                    <p class="text-muted mb-0">發表於 {{ article.created_at|date:"Y/m/d H:i" }}</p>
+                </div>
+            </div>
+
+            <!-- 相關文章 -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">相關文章</h5>
+                </div>
+                <div class="card-body">
+                    {% for related_article in related_articles %}
+                    <div class="mb-3">
+                        <h6 class="mb-1">
+                            <a href="{% url 'article_detail' related_article.id %}" class="text-decoration-none">{{ related_article.title }}</a>
+                        </h6>
+                        <small class="text-muted">
+                            <i class="fas fa-user me-1"></i>{{ related_article.author.get_full_name|default:related_article.author.username }}
+                        </small>
+                    </div>
+                    {% empty %}
+                    <p class="text-center text-muted my-4">沒有相關文章</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
