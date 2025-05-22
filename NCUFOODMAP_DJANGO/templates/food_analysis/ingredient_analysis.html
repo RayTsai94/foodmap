@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}食材分析 - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">食材分析</h1>
+    <p class="lead mb-5">了解餐廳菜單中使用的常見食材及其營養價值</p>
+    
+    <!-- 食材分析摘要 -->
+    <div class="analysis-card mb-5">
+        <h2 class="mb-4">食材使用統計</h2>
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h5 class="mb-3">最常見食材 Top 10</h5>
+                <div class="chart-container mb-4" style="position: relative; height: 300px;">
+                    <canvas id="ingredientsChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h5 class="mb-3">食材類型分布</h5>
+                <div class="chart-container mb-4" style="position: relative; height: 300px;">
+                    <canvas id="ingredientTypeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 個別食材分析 -->
+    {% for item in ingredients_with_details %}
+        <div class="analysis-card mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3>{{ item.ingredient.name }}</h3>
+                <span class="badge bg-primary p-2">使用於 {{ item.menu_item_count }} 個菜單項目</span>
+            </div>
+            
+            <div class="mb-4">
+                <h5 class="mb-3">營養價值</h5>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-box">
+                            <h4>{{ item.ingredient.calories|default:"--" }}</h4>
+                            <p>熱量 (每100克)</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-box">
+                            <h4>{{ item.ingredient.protein|default:"--" }}g</h4>
+                            <p>蛋白質 (每100克)</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-box">
+                            <h4>{{ item.ingredient.carbs|default:"--" }}g</h4>
+                            <p>碳水化合物 (每100克)</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stat-box">
+                            <h4>{{ item.ingredient.fat|default:"--" }}g</h4>
+                            <p>脂肪 (每100克)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <h5 class="mb-3">包含此食材的菜單項目</h5>
+            <div class="row">
+                {% for menu_item in item.menu_items %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            {% if menu_item.image %}
+                                <img src="{{ menu_item.image.url }}" class="card-img-top" alt="{{ menu_item.name }}">
+                            {% else %}
+                                <img src="{% static 'img/default-food.jpg' %}" class="card-img-top" alt="{{ menu_item.name }}">
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ menu_item.name }}</h5>
+                                <p class="card-text text-muted">{{ menu_item.restaurant.name }}</p>
+                                <a href="{% url 'menu_item_detail' menu_item.pk %}" class="btn btn-sm btn-primary">查看詳情</a>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            目前尚無菜單項目包含此食材。
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            {% if item.menu_item_count > 5 %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'restaurant_list' %}?ingredient={{ item.ingredient.id }}" class="btn btn-outline-primary">
+                        查看所有包含此食材的菜單項目
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    {% empty %}
+        <div class="alert alert-info">
+            尚未添加任何食材信息。請稍後再來查看。
+        </div>
+    {% endfor %}
+    
+    <!-- 食材資訊提示 -->
+    <div class="card mt-5">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">食材健康知識</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-carrot text-warning me-2"></i>多吃蔬果的好處</h5>
+                    <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item">富含維生素、礦物質和抗氧化劑</li>
+                        <li class="list-group-item">提供膳食纖維，促進腸道健康</li>
+                        <li class="list-group-item">可降低心臟病、中風和某些癌症的風險</li>
+                        <li class="list-group-item">幫助維持健康體重</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5><i class="fas fa-seedling text-success me-2"></i>選擇優質蛋白質</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">魚類：富含omega-3脂肪酸</li>
+                        <li class="list-group-item">豆類：提供蛋白質和膳食纖維</li>
+                        <li class="list-group-item">堅果：含有健康脂肪和抗氧化劑</li>
+                        <li class="list-group-item">瘦肉：提供優質蛋白質和鐵質</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-4 bg-light p-3 rounded">
+                <p class="mb-0"><i class="fas fa-info-circle text-primary me-2"></i>平衡攝取各類食材，並多樣化你的飲食，是保持健康的關鍵。</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 食材使用頻率圖表
+        const ingredientCtx = document.getElementById('ingredientsChart').getContext('2d');
+        const ingredientsChart = new Chart(ingredientCtx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    {% for item in ingredients_with_details %}
+                        '{{ item.ingredient.name }}'{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                datasets: [{
+                    label: '使用次數',
+                    data: [
+                        {% for item in ingredients_with_details %}
+                            {{ item.menu_item_count }}{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    ],
+                    backgroundColor: 'rgba(255, 159, 67, 0.7)',
+                    borderColor: 'rgba(255, 159, 67, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 食材類型分布圖表
+        const typeCtx = document.getElementById('ingredientTypeChart').getContext('2d');
+        const typeChart = new Chart(typeCtx, {
+            type: 'pie',
+            data: {
+                labels: ['蔬菜水果', '肉類', '海鮮', '穀物', '乳製品', '其他'],
+                datasets: [{
+                    data: [30, 25, 15, 15, 10, 5],
+                    backgroundColor: [
+                        'rgba(39, 174, 96, 0.7)',
+                        'rgba(231, 76, 60, 0.7)',
+                        'rgba(52, 152, 219, 0.7)',
+                        'rgba(241, 196, 15, 0.7)',
+                        'rgba(142, 68, 173, 0.7)',
+                        'rgba(149, 165, 166, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(39, 174, 96, 1)',
+                        'rgba(231, 76, 60, 1)',
+                        'rgba(52, 152, 219, 1)',
+                        'rgba(241, 196, 15, 1)',
+                        'rgba(142, 68, 173, 1)',
+                        'rgba(149, 165, 166, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 

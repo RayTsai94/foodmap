@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}刪除打卡紀錄{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card shadow rounded-4 border-0 mb-4">
+      <div class="card-body bg-light rounded-4">
+        <h3 class="card-title mb-4 text-center text-danger"><i class="fas fa-trash-alt me-2"></i>刪除打卡紀錄</h3>
+        <p class="text-center">您確定要刪除這筆打卡紀錄嗎？<br><strong>{{ checkin.restaurant_name }}｜{{ checkin.date }}</strong></p>
+        <form method="post">
+          {% csrf_token %}
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-danger rounded-pill">確定刪除</button>
+            <a href="{% url 'checkin_detail' pk=checkin.pk %}" class="btn btn-outline-secondary rounded-pill">取消</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

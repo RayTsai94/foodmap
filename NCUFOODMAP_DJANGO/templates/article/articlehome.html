@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}首頁 - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 左側：最新文章 -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">最新文章</h5>
+                {% if user.is_authenticated %}
+                <a href="{% url 'article_create' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>發布文章
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if articles %}
+                    {% for article in articles %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="card-title mb-0">
+                                    <a href="{% url 'article_detail' article.id %}" class="text-decoration-none">{{ article.title }}</a>
+                                </h5>
+                                <small class="text-muted">{{ article.created_at|date:"Y/m/d H:i" }}</small>
+                            </div>
+                            <p class="card-text">{{ article.content|truncatechars:200 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-primary me-2">
+                                        <i class="fas fa-user me-1"></i>{{ article.author.get_full_name|default:article.author.username }}
+                                    </span>
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-comments me-1"></i>{{ article.comments.count }}
+                                    </span>
+                                </div>
+                                <a href="{% url 'article_detail' article.id %}" class="btn btn-outline-primary btn-sm">閱讀更多</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center text-muted my-4">目前還沒有任何文章</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 右側：熱門文章和統計 -->
+    <div class="col-md-4">
+        <!-- 熱門文章 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">熱門文章</h5>
+            </div>
+            <div class="card-body">
+                {% if popular_articles %}
+                    {% for article in popular_articles %}
+                    <div class="mb-3">
+                        <h6 class="mb-1">
+                            <a href="{% url 'article_detail' article.id %}" class="text-decoration-none">{{ article.title }}</a>
+                        </h6>
+                        <small class="text-muted">
+                            <i class="fas fa-comments me-1"></i>{{ article.comments.count }}
+                        </small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center text-muted my-4">目前還沒有熱門文章</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 網站統計 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">網站統計</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <h3 class="mb-1">{{ total_articles }}</h3>
+                        <small class="text-muted">文章總數</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <h3 class="mb-1">{{ total_comments }}</h3>
+                        <small class="text-muted">留言總數</small>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="mb-1">{{ total_users }}</h3>
+                        <small class="text-muted">註冊用戶</small>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="mb-1">{{ total_restaurants }}</h3>
+                        <small class="text-muted">餐廳數量</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
