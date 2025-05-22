@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}過敏原資訊 - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">過敏原資訊</h1>
+    <p class="lead mb-5">了解餐廳菜單中的過敏原，尋找適合您的安全食品選擇</p>
+    
+    <!-- 過敏原資訊區塊 -->
+    <div class="analysis-card mb-5">
+        <h2 class="mb-4">常見食物過敏原</h2>
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card text-center p-3 h-100">
+                    <i class="fas fa-bread-slice fa-3x text-warning mb-3"></i>
+                    <h5>麩質 (小麥)</h5>
+                    <p class="small text-muted">麵包、麵食、醬油等</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center p-3 h-100">
+                    <i class="fas fa-egg fa-3x text-warning mb-3"></i>
+                    <h5>蛋類</h5>
+                    <p class="small text-muted">蛋糕、美乃滋、某些沙拉醬</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center p-3 h-100">
+                    <i class="fas fa-fish fa-3x text-warning mb-3"></i>
+                    <h5>海鮮</h5>
+                    <p class="small text-muted">魚類、貝類、蝦蟹等海產</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center p-3 h-100">
+                    <i class="fas fa-seedling fa-3x text-warning mb-3"></i>
+                    <h5>堅果</h5>
+                    <p class="small text-muted">花生、杏仁、核桃等</p>
+                </div>
+            </div>
+        </div>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>如果您有食物過敏的情況，請務必在點餐前詢問餐廳人員食材成分。
+        </div>
+    </div>
+    
+    <!-- 無過敏原菜單項目 -->
+    {% for item in allergen_free_items %}
+        <div class="analysis-card mb-5">
+            <h3 class="mb-4">不含{{ item.allergen.name }}的菜單項目</h3>
+            <div class="row">
+                {% for menu_item in item.items %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            {% if menu_item.image %}
+                                <img src="{{ menu_item.image.url }}" class="card-img-top" alt="{{ menu_item.name }}">
+                            {% else %}
+                                <img src="{% static 'img/default-food.jpg' %}" class="card-img-top" alt="{{ menu_item.name }}">
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ menu_item.name }}</h5>
+                                <p class="card-text text-muted">{{ menu_item.restaurant.name }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-success">無{{ item.allergen.name }}</span>
+                                    <a href="{% url 'menu_item_detail' menu_item.pk %}" class="btn btn-sm btn-primary">查看詳情</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            目前尚未添加無{{ item.allergen.name }}的菜單項目。
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                {% if item.total_count > 5 %}
+                    <div class="col-12 text-center">
+                        <a href="{% url 'restaurant_list' %}?allergen_free={{ item.allergen.id }}" class="btn btn-outline-primary">
+                            查看全部 {{ item.total_count }} 個無{{ item.allergen.name }}的菜單項目
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <div class="alert alert-info">
+            尚未添加任何過敏原信息。請稍後再來查看。
+        </div>
+    {% endfor %}
+    
+    <!-- 過敏原資訊提示 -->
+    <div class="card mt-5">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">過敏原提示</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-exclamation-triangle text-warning me-2"></i>常見過敏原症狀</h5>
+                    <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item">皮膚：蕁麻疹、紅疹、搔癢</li>
+                        <li class="list-group-item">呼吸道：氣喘、鼻塞、喉嚨發癢</li>
+                        <li class="list-group-item">消化系統：噁心、嘔吐、腹痛、腹瀉</li>
+                        <li class="list-group-item">嚴重情況：過敏性休克</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5><i class="fas fa-shield-alt text-info me-2"></i>預防建議</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">仔細閱讀食品成分標籤</li>
+                        <li class="list-group-item">在餐廳用餐時，告知服務人員您的過敏情況</li>
+                        <li class="list-group-item">攜帶過敏藥物或救急藥物</li>
+                        <li class="list-group-item">了解食物交叉污染的可能性</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-4 bg-light p-3 rounded">
+                <p class="mb-0"><i class="fas fa-info-circle text-primary me-2"></i>如果您有嚴重的食物過敏，建議攜帶自己的食物或諮詢醫療專業人員。</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

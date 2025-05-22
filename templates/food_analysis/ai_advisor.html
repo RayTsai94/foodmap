@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}智能營養顧問 - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">智能營養顧問</h1>
+    <p class="lead mb-5">向AI諮詢您的飲食、營養和健康問題</p>
+    
+    <div class="analysis-card mb-5">
+        <h2 class="mb-4">問AI</h2>
+        <form method="get" action="{% url 'ai_advisor' %}">
+            <div class="mb-3">
+                <label for="question" class="form-label">請輸入您的問題</label>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="question" name="question" 
+                           placeholder="例如：怎樣健康減肥？或 哪些食物富含蛋白質？" 
+                           value="{{ question }}" required>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-paper-plane me-2"></i>詢問
+                    </button>
+                </div>
+                <div class="form-text">您可以詢問飲食建議、營養知識、食物搭配等問題</div>
+            </div>
+        </form>
+        
+        {% if response %}
+            <div class="ai-response mt-4">
+                <h4><i class="fas fa-robot text-primary me-2"></i>AI回答：</h4>
+                <div class="card p-3 mb-4 border-0 bg-light">
+                    <p class="mb-0">{{ response }}</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    {% if recommendations %}
+        <div class="analysis-card mb-5">
+            <h2 class="mb-4">推薦菜單</h2>
+            <p>根據您的問題，我們為您推薦以下菜單項目：</p>
+            
+            <div class="row">
+                {% for item in recommendations %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            {% if item.image %}
+                                <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}">
+                            {% else %}
+                                <img src="{% static 'img/default-food.jpg' %}" class="card-img-top" alt="{{ item.name }}">
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ item.name }}</h5>
+                                <p class="card-text text-muted">{{ item.restaurant.name }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    {% if item.nutrition %}
+                                        <span class="badge bg-success">{{ item.nutrition.calories }} 卡路里</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">無營養信息</span>
+                                    {% endif %}
+                                    <a href="{% url 'menu_item_detail' item.pk %}" class="btn btn-sm btn-primary">查看詳情</a>
+                                </div>
+                                {% if item.nutrition %}
+                                <div class="mt-3">
+                                    <div class="d-flex justify-content-between small">
+                                        <span>蛋白質: {{ item.nutrition.protein }}g</span>
+                                        <span>碳水: {{ item.nutrition.carbs }}g</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- 常見問題區域 -->
+    <div class="card mt-5">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">常見問題</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-question-circle text-warning me-2"></i>您可以問我</h5>
+                    <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item">
+                            <a href="{% url 'ai_advisor' %}?question=有哪些方法可以健康減肥" class="text-decoration-none">
+                                有哪些方法可以健康減肥？
+                            </a>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="{% url 'ai_advisor' %}?question=高蛋白食物有哪些" class="text-decoration-none">
+                                高蛋白食物有哪些？
+                            </a>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="{% url 'ai_advisor' %}?question=素食者如何確保營養均衡" class="text-decoration-none">
+                                素食者如何確保營養均衡？
+                            </a>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="{% url 'ai_advisor' %}?question=糖尿病患者的飲食原則" class="text-decoration-none">
+                                糖尿病患者的飲食原則是什麼？
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5><i class="fas fa-info-circle text-info me-2"></i>使用提示</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">提問時請盡量具體，以獲取更準確的回答</li>
+                        <li class="list-group-item">您可以詢問特定食物的營養成分和健康效益</li>
+                        <li class="list-group-item">可以根據特定健康目標尋求飲食建議</li>
+                        <li class="list-group-item">如有特殊醫療需求，請諮詢專業醫療人員</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-4 bg-light p-3 rounded">
+                <p class="mb-0">
+                    <i class="fas fa-info-circle text-primary me-2"></i>
+                    智能營養顧問提供的建議僅供參考，如有特殊健康需求或疾病，請諮詢專業醫生或營養師。
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
