@@ -22,11 +22,19 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('restaurants.urls')),
+<<<<<<< HEAD
     path('analysis/', include('food_analysis.urls')),
+=======
+    path('food_analysis/', include('food_analysis.urls')),
+>>>>>>> a2d1d25e4bd77c0fdc98631cd3e5167650e679ed
     path('accounts/', include('allauth.urls')),
     path('auth/', include('googleOauth.urls')),
     path('checkin/', include('checkin.urls')),
     path('article/', include('article.urls')),
+<<<<<<< HEAD
+=======
+    path('ai_recommendation/', include('ai_recommendation.urls')),
+>>>>>>> a2d1d25e4bd77c0fdc98631cd3e5167650e679ed
 ]
 
 # 媒體文件服務設定（僅在開發環境下）
