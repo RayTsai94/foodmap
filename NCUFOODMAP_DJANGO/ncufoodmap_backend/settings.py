@@ -63,11 +63,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'checkin',
     'article',
-<<<<<<< HEAD
-    'together'
-=======
     'ai_recommendation',
->>>>>>> a2d1d25e4bd77c0fdc98631cd3e5167650e679ed
 ]
 
 # Google OAuth 配置

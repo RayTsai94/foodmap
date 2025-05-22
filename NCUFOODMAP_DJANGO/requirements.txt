@@ -5,9 +5,5 @@ crispy-bootstrap5==0.7
 djangorestframework==3.14.0
 django-cors-headers==4.3.0
 django-allauth==0.57.0
-<<<<<<< HEAD
 together==1.5.8
-=======
-together>=1.5.8
->>>>>>> a2d1d25e4bd77c0fdc98631cd3e5167650e679ed
 python-dotenv==1.0.0 
