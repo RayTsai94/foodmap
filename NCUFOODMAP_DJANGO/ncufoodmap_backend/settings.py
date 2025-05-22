@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'checkin',
     'article',
+    'together'
 ]
 
 # Google OAuth 配置

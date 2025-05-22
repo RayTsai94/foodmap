@@ -153,8 +153,8 @@ function initMap() {
           map: map,
           title: checkin.restaurant_name,
           icon: {
-            url: "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png",
-            scaledSize: new google.maps.Size(32, 32),
+            url: "{% static 'img/logo.png' %}",
+            scaledSize: new google.maps.Size(50, 50),
           },
         });
 
