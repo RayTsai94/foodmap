@@ -11,10 +11,33 @@
     --background-color: #fef6e4; /* 米色背景 */
 }
 
+/* Sticky Footer 樣式 */
+html, body {
+    height: 100%;
+}
+
 body {
     font-family: 'Noto Sans TC', sans-serif;
     color: var(--dark-color);
     background-color: var(--background-color);
+    margin: 0;
+    padding: 0;
+}
+
+.page-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.content-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
 }
 
 /* 導航欄樣式 */
@@ -182,11 +205,31 @@ body {
 footer {
     background-color: var(--primary-color) !important;
     color: white;
+    margin-top: auto; /* 確保footer推到底部 */
+    border-top: 2px solid var(--secondary-color); /* 添加頂部邊框 */
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); /* 添加陰影效果 */
 }
 
 footer a.text-light:hover {
     color: var(--light-color) !important;
     text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+footer h5 {
+    color: white;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+footer p, footer li {
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+footer hr {
+    border-color: var(--secondary-color);
+    opacity: 0.6;
 }
 
 /* 導航標籤樣式 */

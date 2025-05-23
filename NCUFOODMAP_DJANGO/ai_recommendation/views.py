@@ -2,12 +2,14 @@ from django.shortcuts import render
 from django.conf import settings
 from django.http import JsonResponse
 from .models import AIRecommendation
+from restaurants.models import Restaurant  # 引入餐廳模型
 import together
 import googlemaps
 from django.views.decorators.csrf import csrf_exempt
 import json
 import logging
 import traceback
+import math
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +17,21 @@ def index(request):
     return render(request, 'ai_recommendation/index.html', {
         'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY
     })
+
+def calculate_distance(lat1, lng1, lat2, lng2):
+    """計算兩點間距離（公里）"""
+    # 使用 Haversine 公式
+    R = 6371  # 地球半徑（公里）
+    lat1_rad = math.radians(lat1)
+    lat2_rad = math.radians(lat2)
+    delta_lat = math.radians(lat2 - lat1)
+    delta_lng = math.radians(lng2 - lng1)
+    
+    a = math.sin(delta_lat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lng/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    distance = R * c
+    
+    return distance
 
 @csrf_exempt
 def get_recommendation(request):
@@ -28,6 +45,11 @@ def get_recommendation(request):
                     'success': False,
                     'error': '請輸入搜尋內容'
                 })
+            
+            # 中央大學座標
+            NCU_LAT = 24.9684
+            NCU_LNG = 121.1955
+            SEARCH_RADIUS_KM = 5  # 搜尋半徑5公里
             
             # 設定 Together AI API
             together.api_key = settings.TOGETHER_API_KEY
@@ -98,14 +120,25 @@ def get_recommendation(request):
                 })
             
             try:
-                # 使用 Google Maps API 搜尋相關位置
+                # 使用 Google Maps API 搜尋相關位置，限制在中央大學附近5公里
                 gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
                 
-                # 搜尋店家
-                search_query = f"{ai_response['store_type']} near NCU"
+                # 搜尋店家，指定位置和半徑
+                search_query = f"{ai_response['store_type']}"
                 logger.info(f"Google Maps 搜尋查詢：{search_query}")
                 
-                places_result = gmaps.places(search_query)
+                # 使用 nearby_search 限制搜尋範圍
+                places_result = gmaps.places_nearby(
+                    location=(NCU_LAT, NCU_LNG),
+                    radius=SEARCH_RADIUS_KM * 1000,  # 轉換為公尺
+                    keyword=search_query,
+                    type='restaurant'
+                )
+                
+                if not places_result.get('results'):
+                    # 如果沒有結果，嘗試文字搜尋
+                    search_query_with_location = f"{ai_response['store_type']} 中央大學附近"
+                    places_result = gmaps.places(search_query_with_location)
                 
                 if not places_result.get('results'):
                     return JsonResponse({
@@ -114,17 +147,51 @@ def get_recommendation(request):
                     })
                 
                 recommendations = []
+                processed_count = 0
                 
-                for place in places_result.get('results', [])[:3]:  # 取前3個結果
+                for place in places_result.get('results', []):
+                    if processed_count >= 5:  # 限制最多5個結果
+                        break
+                        
                     location = place['geometry']['location']
+                    place_lat = location['lat']
+                    place_lng = location['lng']
+                    
+                    # 檢查是否在5公里範圍內
+                    distance = calculate_distance(NCU_LAT, NCU_LNG, place_lat, place_lng)
+                    if distance > SEARCH_RADIUS_KM:
+                        continue
+                    
+                    # 獲取店家詳細資訊，包括評分和網站
+                    place_details = gmaps.place(
+                        place_id=place['place_id'],
+                        fields=['name', 'formatted_address', 'rating', 'website']
+                    )
+                    
+                    # 獲取照片URL（從nearby_search結果中）
+                    photo_url = None
+                    if place.get('photos') and len(place['photos']) > 0:
+                        photo_reference = place['photos'][0]['photo_reference']
+                        photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo_reference}&key={settings.GOOGLE_MAPS_API_KEY}"
+                    
+                    # 檢查是否已存在於本地資料庫
+                    existing_restaurant = Restaurant.objects.filter(
+                        name=place['name'],
+                        lat__isnull=False,
+                        lng__isnull=False
+                    ).first()
+                    
+                    local_image_url = None
+                    if existing_restaurant and existing_restaurant.image:
+                        local_image_url = existing_restaurant.image.url
                     
                     recommendation = AIRecommendation(
                         query=query,
                         store_type=ai_response['store_type'],
                         store_name=place['name'],
                         address=place.get('formatted_address', ''),
-                        latitude=location['lat'],
-                        longitude=location['lng'],
+                        latitude=place_lat,
+                        longitude=place_lng,
                         ai_analysis=ai_response['analysis']
                     )
                     recommendation.save()
@@ -132,11 +199,27 @@ def get_recommendation(request):
                     recommendations.append({
                         'name': place['name'],
                         'address': place.get('formatted_address', ''),
-                        'lat': location['lat'],
-                        'lng': location['lng'],
+                        'lat': place_lat,
+                        'lng': place_lng,
                         'type': ai_response['store_type'],
-                        'analysis': ai_response['analysis']
+                        'analysis': ai_response['analysis'],
+                        'distance': round(distance, 2),
+                        'rating': place_details.get('result', {}).get('rating', 0),
+                        'photo_url': photo_url,
+                        'local_image_url': local_image_url,
+                        'website': place_details.get('result', {}).get('website', '')
                     })
+                    
+                    processed_count += 1
+                
+                if not recommendations:
+                    return JsonResponse({
+                        'success': False,
+                        'error': '在中央大學附近5公里內找不到符合條件的餐廳'
+                    })
+                
+                # 按距離排序
+                recommendations.sort(key=lambda x: x['distance'])
                 
                 return JsonResponse({
                     'success': True,
