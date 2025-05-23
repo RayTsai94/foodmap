@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.db.models import Avg, Q
 from django.core.paginator import Paginator
 from django.conf import settings
+from django.http import JsonResponse
 from .models import Restaurant, Category, Review, MenuItem
 from .forms import ReviewForm, RestaurantFilterForm
 
@@ -56,6 +57,7 @@ def restaurant_list(request):
     return render(request, 'restaurants/restaurant_list.html', {
         'page_obj': page_obj,
         'filter_form': filter_form,
+        'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
     })
 
 def restaurant_detail(request, pk):
@@ -115,11 +117,65 @@ def menu_item_detail(request, pk):
         'nutrition': nutrition,
     })
 
-def map_view(request):
-    """地圖視圖，顯示餐廳位置"""
-    restaurants = Restaurant.objects.filter(is_active=True, lat__isnull=False, lng__isnull=False)
+def search_suggestions(request):
+    """AJAX端點：提供搜索建議，類似Google Maps"""
+    query = request.GET.get('q', '').strip()
     
-    return render(request, 'restaurants/map.html', {
-        'restaurants': restaurants,
-        'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
+    if len(query) < 2:  # 至少需要2個字元才開始搜索
+        return JsonResponse({'suggestions': []})
+    
+    # 搜索餐廳名稱、地址和分類
+    restaurant_suggestions = Restaurant.objects.filter(
+        Q(name__icontains=query) | Q(address__icontains=query),
+        is_active=True
+    ).distinct()[:8]  # 限制最多8個建議
+    
+    # 搜索分類
+    category_suggestions = Category.objects.filter(
+        name__icontains=query
+    )[:3]  # 最多3個分類建議
+    
+    suggestions = []
+    
+    # 添加餐廳建議
+    for restaurant in restaurant_suggestions:
+        # 計算平均評分
+        avg_rating = restaurant.reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+        review_count = restaurant.reviews.count()
+        
+        # 判斷匹配類型
+        match_type = "restaurant"
+        if query.lower() in restaurant.name.lower():
+            match_in = "name"
+            highlight_text = restaurant.name
+        else:
+            match_in = "address" 
+            highlight_text = restaurant.address
+            
+        suggestions.append({
+            'type': match_type,
+            'match_in': match_in,
+            'id': restaurant.id,
+            'name': restaurant.name,
+            'address': restaurant.address,
+            'highlight_text': highlight_text,
+            'avg_rating': round(avg_rating, 1),
+            'review_count': review_count,
+            'categories': [cat.name for cat in restaurant.categories.all()[:2]],  # 最多顯示2個分類
+            'image_url': restaurant.image.url if restaurant.image else None,
+        })
+    
+    # 添加分類建議
+    for category in category_suggestions:
+        restaurant_count = category.restaurants.filter(is_active=True).count()
+        suggestions.append({
+            'type': 'category',
+            'name': category.name,
+            'restaurant_count': restaurant_count,
+            'icon': category.icon or 'fas fa-utensils',
+        })
+    
+    return JsonResponse({
+        'suggestions': suggestions,
+        'query': query
     })
