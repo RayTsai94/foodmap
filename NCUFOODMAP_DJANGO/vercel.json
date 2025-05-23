@@ -2,30 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "ncufoodmap_backend/wsgi.py",
-      "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.9" }
-    },
-    {
-      "src": "build_files.sh",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "staticfiles_build"
-      }
+      "src": "ncufoodmap_backend/vercel_wsgi.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
-    },
-    {
-      "src": "/media/(.*)",
-      "dest": "/media/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "ncufoodmap_backend/wsgi.py"
+      "dest": "ncufoodmap_backend/vercel_wsgi.py"
     }
   ]
 } 
