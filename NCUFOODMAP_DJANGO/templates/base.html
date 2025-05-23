@@ -82,9 +82,6 @@
                                 <li><a class="dropdown-item" href="{% url 'restaurant_ranking' %}">店家排行</a></li>
                             </ul>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'map' %}">地圖</a>
-                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                                 食物分析
@@ -104,8 +101,12 @@
                         </li>
                     </ul>
                     <form class="d-flex me-2" action="{% url 'restaurant_list' %}" method="get">
-                        <input class="form-control me-2" type="search" placeholder="搜尋餐廳" name="name_or_address">
-                        <button class="btn btn-outline-light" type="submit">搜尋</button>
+                        <div class="input-group">
+                            <input class="form-control" type="search" placeholder="搜尋餐廳" name="name_or_address">
+                            <button class="btn btn-outline-light" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
                     </form>
                     
                     <!-- 用戶登入/註冊區域 -->
@@ -176,7 +177,6 @@
                         <ul class="list-unstyled">
                             <li><a href="{% url 'home' %}" class="text-light">首頁</a></li>
                             <li><a href="{% url 'restaurant_list' %}" class="text-light">餐廳列表</a></li>
-                            <li><a href="{% url 'map' %}" class="text-light">地圖</a></li>
                             <li><a href="{% url 'nutrition_dashboard' %}" class="text-light">食物分析</a></li>
                             <li><a href="{% url 'ai_advisor' %}" class="text-light">智能營養顧問</a></li>
                         </ul>
