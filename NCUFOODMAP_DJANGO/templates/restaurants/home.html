@@ -128,13 +128,13 @@
 
 <section class="mb-5">
     <h2 class="text-center mb-4">打卡足跡檢索</h2>
-    <div id="map" style="height: 400px;"></div>
+    <div id="mainMap" style="height: 400px;"></div>
 </section>
 
 <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap" async defer></script>
 <script>
 function initMap() {
-  const map = new google.maps.Map(document.getElementById("map"), {
+  const map = new google.maps.Map(document.getElementById("mainMap"), {
     center: { lat: 24.968, lng: 121.193 },
     zoom: 16,
   });
@@ -153,8 +153,8 @@ function initMap() {
           map: map,
           title: checkin.restaurant_name,
           icon: {
-            url: "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png",
-            scaledSize: new google.maps.Size(32, 32),
+            url: "{% static 'img/logo.png' %}",
+            scaledSize: new google.maps.Size(50, 50),
           },
         });
 
