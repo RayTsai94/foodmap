@@ -1,0 +1,305 @@
+/* 全局樣式 */
+:root {
+    --primary-color: #ff9f43; /* 橙色 */
+    --secondary-color: #ffbe76; /* 淺橙色 */
+    --accent-color: #ff6b6b; /* 輔助紅色 */
+    --light-color: #fff6e5; /* 淺黃背景色 */
+    --dark-color: #2c3e50; /* 深藍色文字 */
+    --success-color: #27ae60;
+    --warning-color: #e67e22;
+    --danger-color: #c0392b;
+    --background-color: #fef6e4; /* 米色背景 */
+}
+
+/* Sticky Footer 樣式 */
+html, body {
+    height: 100%;
+}
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    color: var(--dark-color);
+    background-color: var(--background-color);
+    margin: 0;
+    padding: 0;
+}
+
+.page-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.content-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* 導航欄樣式 */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: var(--primary-color) !important;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+/* 卡片樣式 */
+.card {
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    background-color: #ffffff;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 5px 10px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+/* 餐廳詳情頁面 */
+.restaurant-header {
+    position: relative;
+    height: 350px;
+    color: white;
+    background-size: cover;
+    background-position: center;
+    margin-bottom: 30px;
+}
+
+.restaurant-header-overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.8));
+    display: flex;
+    align-items: flex-end;
+    padding: 30px;
+}
+
+.restaurant-info {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* 評論樣式 */
+.review-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.rating {
+    color: var(--primary-color);
+}
+
+/* 菜單項目樣式 */
+.menu-item {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.menu-item-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 10px;
+    object-fit: cover;
+    margin-right: 15px;
+}
+
+.menu-item-price {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.diet-badge {
+    background-color: var(--success-color);
+}
+
+.spicy-badge {
+    background-color: var(--danger-color);
+}
+
+/* 食物分析頁面 */
+.analysis-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.stat-box {
+    text-align: center;
+    background: var(--light-color);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.stat-box h3, .stat-box h4 {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+/* 按鈕樣式 */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* 頁腳樣式 */
+footer {
+    background-color: var(--primary-color) !important;
+    color: white;
+    margin-top: auto; /* 確保footer推到底部 */
+    border-top: 2px solid var(--secondary-color); /* 添加頂部邊框 */
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); /* 添加陰影效果 */
+}
+
+footer a.text-light:hover {
+    color: var(--light-color) !important;
+    text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+footer h5 {
+    color: white;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+footer p, footer li {
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+footer hr {
+    border-color: var(--secondary-color);
+    opacity: 0.6;
+}
+
+/* 導航標籤樣式 */
+.nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* 卡片標題與圖標樣式 */
+.card-header.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+.bg-success {
+    background-color: var(--success-color) !important;
+}
+
+.progress-bar.bg-success {
+    background-color: var(--success-color) !important;
+}
+
+.progress-bar.bg-info {
+    background-color: var(--secondary-color) !important;
+}
+
+.alert-primary {
+    background-color: var(--light-color);
+    color: var(--dark-color);
+    border-color: var(--secondary-color);
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .restaurant-header {
+        height: 250px;
+    }
+    
+    .menu-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .menu-item-image {
+        margin-right: 0;
+        margin-bottom: 15px;
+    }
+}
+
+/* 評分星星樣式 */
+.rating-star {
+    cursor: pointer;
+    color: #ccc;
+}
+
+.rating-star.selected, .fas.fa-star {
+    color: var(--primary-color);
+}
+
+/* 分析結果樣式 */
+.analysis-result {
+    padding: 20px;
+    border-radius: 10px;
+    background-color: var(--light-color);
+    margin-top: 20px;
+} 

@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI 餐廳推薦{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* AI推薦頁面特殊樣式 */
+    .ai-recommendation-container {
+        min-height: calc(100vh - 200px); /* 確保頁面有足夠高度 */
+    }
+    
+    #map {
+        height: 600px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    @media (max-width: 768px) {
+        #map {
+            height: 400px;
+        }
+        
+        .ai-recommendation-container {
+            min-height: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ai-recommendation-container">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">AI 餐廳推薦</h5>
+                    <p class="card-text text-muted">輸入您的需求，讓 AI 為您推薦中央大學附近 <strong class="text-primary">5公里內</strong> 的餐廳。例如：</p>
+                    <ul class="text-muted small">
+                        <li>想吃辣的</li>
+                        <li>便宜的日本料理</li>
+                        <li>適合約會的餐廳</li>
+                        <li>有素食選擇的餐廳</li>
+                    </ul>
+                    <div class="alert alert-info small" role="alert">
+                        <i class="fas fa-info-circle me-1"></i>
+                        搜尋範圍：中央大學周圍5公里內的餐廳，結果會按距離排序並顯示店家照片
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="searchQuery" placeholder="輸入您的需求">
+                    </div>
+                    <button class="btn btn-primary mt-3" id="searchButton" onclick="getRecommendation()">
+                        <span class="normal-text">取得推薦</span>
+                        <span class="loading-text d-none">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            處理中...
+                        </span>
+                    </button>
+                </div>
+            </div>
+            <div id="errorAlert" class="alert alert-danger mt-3 d-none" role="alert">
+            </div>
+            <div id="recommendationResults" class="mt-4">
+                <!-- 推薦結果將在這裡顯示 -->
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div id="map"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
+<script>
+let map;
+let markers = [];
+let searchRadiusCircle; // 新增搜尋範圍圓圈
+
+function initMap() {
+    // 中央大學的座標
+    const ncu = { lat: 24.9684, lng: 121.1955 };
+    map = new google.maps.Map(document.getElementById('map'), {
+        center: ncu,
+        zoom: 13
+    });
+    
+    // 添加中央大學的標記
+    new google.maps.Marker({
+        position: ncu,
+        map: map,
+        title: '國立中央大學',
+        icon: {
+            url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+        }
+    });
+    
+    // 添加5公里搜尋範圍圓圈
+    searchRadiusCircle = new google.maps.Circle({
+        strokeColor: '#FF6B6B',
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: '#FF6B6B',
+        fillOpacity: 0.1,
+        map: map,
+        center: ncu,
+        radius: 5000 // 5公里 = 5000公尺
+    });
+}
+
+function setLoading(isLoading) {
+    const button = document.getElementById('searchButton');
+    const normalText = button.querySelector('.normal-text');
+    const loadingText = button.querySelector('.loading-text');
+    button.disabled = isLoading;
+    
+    if (isLoading) {
+        normalText.classList.add('d-none');
+        loadingText.classList.remove('d-none');
+    } else {
+        normalText.classList.remove('d-none');
+        loadingText.classList.add('d-none');
+    }
+}
+
+function showError(message) {
+    const errorAlert = document.getElementById('errorAlert');
+    errorAlert.textContent = message;
+    errorAlert.classList.remove('d-none');
+}
+
+function hideError() {
+    const errorAlert = document.getElementById('errorAlert');
+    errorAlert.classList.add('d-none');
+}
+
+function getRecommendation() {
+    const query = document.getElementById('searchQuery').value.trim();
+    if (!query) {
+        showError('請輸入搜尋內容');
+        return;
+    }
+
+    hideError();
+    setLoading(true);
+
+    // 清除之前的標記
+    markers.forEach(marker => marker.setMap(null));
+    markers = [];
+    
+    // 清除之前的結果
+    document.getElementById('recommendationResults').innerHTML = '';
+    
+    fetch('/ai_recommendation/get_recommendation/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: query })
+    })
+    .then(response => response.json())
+    .then(data => {
+        setLoading(false);
+        if (data.success) {
+            hideError();
+            displayRecommendations(data.recommendations);
+        } else {
+            showError(data.error || '發生錯誤，請稍後再試');
+        }
+    })
+    .catch(error => {
+        setLoading(false);
+        console.error('Error:', error);
+        showError('發生網路錯誤，請稍後再試');
+    });
+}
+
+function displayRecommendations(recommendations) {
+    const resultsDiv = document.getElementById('recommendationResults');
+    resultsDiv.innerHTML = '';
+    
+    if (recommendations.length === 0) {
+        showError('找不到符合條件的餐廳');
+        return;
+    }
+    
+    const bounds = new google.maps.LatLngBounds();
+    
+    recommendations.forEach((rec, index) => {
+        // 決定使用哪張照片
+        let imageHtml = '';
+        if (rec.local_image_url) {
+            imageHtml = `<img src="${rec.local_image_url}" class="card-img-top restaurant-image" alt="${rec.name}" style="height: 200px; object-fit: cover;">`;
+        } else if (rec.photo_url) {
+            imageHtml = `<img src="${rec.photo_url}" class="card-img-top restaurant-image" alt="${rec.name}" style="height: 200px; object-fit: cover;">`;
+        } else {
+            imageHtml = `<div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                            <i class="fas fa-utensils fa-3x text-muted"></i>
+                        </div>`;
+        }
+        
+        // 評分顯示
+        const ratingHtml = rec.rating > 0 ? 
+            `<span class="badge bg-warning text-dark me-2">
+                <i class="fas fa-star"></i> ${rec.rating}
+            </span>` : '';
+        
+        // 網站連結
+        const websiteHtml = rec.website ? 
+            `<p class="card-text">
+                <i class="fas fa-globe text-info me-2"></i>
+                <a href="${rec.website}" target="_blank" class="text-decoration-none">官方網站</a>
+            </p>` : '';
+        
+        // 添加結果卡片
+        const card = document.createElement('div');
+        card.className = 'card mb-3';
+        card.innerHTML = `
+            ${imageHtml}
+            <div class="card-body">
+                <h5 class="card-title">
+                    <span class="badge bg-primary me-2">${index + 1}</span>
+                    ${rec.name}
+                </h5>
+                <h6 class="card-subtitle mb-2 text-muted">
+                    ${rec.type}
+                    ${ratingHtml}
+                    <span class="badge bg-secondary">
+                        <i class="fas fa-map-marker-alt"></i> ${rec.distance} 公里
+                    </span>
+                </h6>
+                <p class="card-text">
+                    <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                    ${rec.address}
+                </p>
+                ${websiteHtml}
+                <p class="card-text">
+                    <i class="fas fa-lightbulb text-warning me-2"></i>
+                    <small class="text-muted">${rec.analysis}</small>
+                </p>
+                <button class="btn btn-outline-primary btn-sm" onclick="focusOnMarker(${index})">
+                    <i class="fas fa-search-plus"></i> 在地圖上查看
+                </button>
+            </div>
+        `;
+        resultsDiv.appendChild(card);
+        
+        // 添加地圖標記
+        const position = { lat: rec.lat, lng: rec.lng };
+        const marker = new google.maps.Marker({
+            position: position,
+            map: map,
+            title: rec.name,
+            label: {
+                text: (index + 1).toString(),
+                color: 'white'
+            },
+            animation: google.maps.Animation.DROP
+        });
+        
+        // 更詳細的資訊視窗內容
+        const infoWindowContent = `
+            <div style="max-width: 300px;">
+                ${rec.photo_url || rec.local_image_url ? 
+                    `<img src="${rec.local_image_url || rec.photo_url}" style="width: 100%; height: 150px; object-fit: cover; margin-bottom: 10px; border-radius: 5px;" alt="${rec.name}">` : 
+                    ''
+                }
+                <h6 class="mb-1">${rec.name}</h6>
+                <p class="mb-1">
+                    <small class="text-primary">${rec.type}</small>
+                    ${rec.rating > 0 ? `<span class="badge bg-warning text-dark ms-2"><i class="fas fa-star"></i> ${rec.rating}</span>` : ''}
+                </p>
+                <p class="mb-1"><small><i class="fas fa-map-marker-alt text-danger"></i> ${rec.distance} 公里</small></p>
+                <p class="mb-0"><small>${rec.address}</small></p>
+                ${rec.website ? `<p class="mb-0 mt-2"><small><a href="${rec.website}" target="_blank">官方網站</a></small></p>` : ''}
+            </div>
+        `;
+        
+        const infowindow = new google.maps.InfoWindow({
+            content: infoWindowContent
+        });
+        
+        marker.addListener('click', () => {
+            // 關閉之前開啟的資訊視窗
+            markers.forEach(m => {
+                if (m.infoWindow) {
+                    m.infoWindow.close();
+                }
+            });
+            infowindow.open(map, marker);
+        });
+        
+        // 將資訊視窗存儲到標記物件中
+        marker.infoWindow = infowindow;
+        markers.push(marker);
+        bounds.extend(position);
+    });
+    
+    // 調整地圖視角以顯示所有標記
+    bounds.extend(new google.maps.LatLng(24.9684, 121.1955)); // 加入中央大學的位置
+    map.fitBounds(bounds);
+    
+    // 如果縮放太近，設定最大縮放級別
+    const listener = google.maps.event.addListener(map, 'idle', function() {
+        if (map.getZoom() > 16) {
+            map.setZoom(16);
+        }
+        google.maps.event.removeListener(listener);
+    });
+}
+
+// 新增函數：聚焦到特定標記
+function focusOnMarker(index) {
+    if (markers[index]) {
+        map.setCenter(markers[index].getPosition());
+        map.setZoom(18);
+        
+        // 關閉所有資訊視窗
+        markers.forEach(m => {
+            if (m.infoWindow) {
+                m.infoWindow.close();
+            }
+        });
+        
+        // 開啟選中的資訊視窗
+        if (markers[index].infoWindow) {
+            markers[index].infoWindow.open(map, markers[index]);
+        }
+        
+        // 添加標記動畫
+        markers[index].setAnimation(google.maps.Animation.BOUNCE);
+        setTimeout(() => {
+            markers[index].setAnimation(null);
+        }, 2000);
+    }
+}
+
+// 初始化地圖
+window.onload = initMap;
+
+// 添加按下 Enter 鍵搜尋的功能
+document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        getRecommendation();
+    }
+});
+</script>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease;
+}
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+</style>
+{% endblock %} 
