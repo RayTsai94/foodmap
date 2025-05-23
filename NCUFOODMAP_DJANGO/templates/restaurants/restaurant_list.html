@@ -2,152 +2,645 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}餐廳列表 - NCU 食物地圖{% endblock %}
+{% block title %}餐廳探索地圖 - NCU 食物地圖{% endblock %}
+
+{% block extra_css %}
+<style>
+    #restaurant-map {
+        width: 100%;
+        height: 400px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+    .map-info-window {
+        padding: 5px;
+        max-width: 250px;
+    }
+    .filter-section {
+        background: linear-gradient(135deg, #ff9a56 0%, #ffad56 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    .filter-section .form-control,
+    .filter-section .form-select {
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: 8px;
+    }
+    
+    /* 搜索建議樣式 */
+    .search-container {
+        position: relative;
+    }
+    .search-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        max-height: 400px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+    .suggestion-item {
+        padding: 12px 15px;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s;
+    }
+    .suggestion-item:hover,
+    .suggestion-item.active {
+        background-color: #f8f9fa;
+    }
+    .suggestion-item:last-child {
+        border-bottom: none;
+    }
+    .suggestion-restaurant {
+        display: flex;
+        align-items: center;
+    }
+    .suggestion-restaurant .restaurant-image {
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        margin-right: 12px;
+        object-fit: cover;
+    }
+    .suggestion-restaurant .restaurant-info {
+        flex: 1;
+    }
+    .suggestion-restaurant .restaurant-name {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 2px;
+    }
+    .suggestion-restaurant .restaurant-address {
+        font-size: 0.85em;
+        color: #666;
+    }
+    .suggestion-restaurant .restaurant-rating {
+        display: flex;
+        align-items: center;
+        margin-top: 2px;
+    }
+    .suggestion-restaurant .rating-stars {
+        margin-right: 5px;
+    }
+    .suggestion-restaurant .rating-text {
+        font-size: 0.8em;
+        color: #666;
+    }
+    .suggestion-category {
+        display: flex;
+        align-items: center;
+        color: #ff9a56;
+    }
+    .suggestion-category .category-icon {
+        margin-right: 10px;
+        width: 20px;
+        text-align: center;
+    }
+    .suggestion-category .category-info {
+        flex: 1;
+    }
+    .suggestion-category .category-name {
+        font-weight: 500;
+    }
+    .suggestion-category .category-count {
+        font-size: 0.85em;
+        color: #666;
+    }
+    .highlight {
+        background-color: #fff3cd;
+        font-weight: 500;
+    }
+    
+    .restaurant-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: none;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .restaurant-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(255, 154, 86, 0.3);
+    }
+    .view-toggle {
+        background: white;
+        border-radius: 25px;
+        padding: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .view-toggle .btn {
+        border-radius: 20px;
+        padding: 8px 20px;
+        border: none;
+        transition: all 0.3s;
+    }
+    .view-toggle .btn.active {
+        background: #ff9a56;
+        color: white;
+    }
+    .btn-primary {
+        background-color: #ff9a56;
+        border-color: #ff9a56;
+    }
+    .btn-primary:hover {
+        background-color: #ff8c42;
+        border-color: #ff8c42;
+    }
+    .text-primary {
+        color: #ff9a56 !important;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1 class="mb-4">探索餐廳</h1>
-    
-    <!-- 過濾區域 -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" id="filter-form">
-                <div class="row mb-2">
-                    <div class="col-md-12">
-                        {{ filter_form.name_or_address|as_crispy_field }}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-5">
-                        {{ filter_form.category|as_crispy_field }}
-                    </div>
-                    <div class="col-md-5">
-                        {{ filter_form.min_rating|as_crispy_field }}
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">套用過濾</button>
-                    </div>
-                </div>
-            </form>
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="text-center mb-3">🗺️ 餐廳探索地圖</h1>
+            <p class="text-center text-muted">搜尋關鍵字或選擇分類，在地圖上找到最適合的餐廳</p>
         </div>
     </div>
     
-    <!-- 餐廳列表 -->
-    <div class="row">
-        {% for restaurant in page_obj %}
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    {% if restaurant.image %}
-                        <img src="{{ restaurant.image.url }}" class="card-img-top" alt="{{ restaurant.name }}">
-                    {% else %}
-                        <img src="{% static 'img/default-restaurant.jpg' %}" class="card-img-top" alt="{{ restaurant.name }}">
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">{{ restaurant.name }}</h5>
-                        <div class="mb-2">
-                            {% for category in restaurant.categories.all %}
-                                <span class="badge bg-secondary">{{ category.name }}</span>
-                            {% endfor %}
-                        </div>
-                        <p class="card-text text-muted">{{ restaurant.address }}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="rating">
-                                {% with restaurant.reviews.all as reviews %}
-                                    {% if reviews %}
-                                        {% with reviews|length as review_count %}
-                                            {% with reviews|dictsort:"rating"|last as highest_review %}
-                                                {% for i in "12345" %}
-                                                    {% if forloop.counter <= highest_review.rating %}
-                                                        <i class="fas fa-star"></i>
-                                                    {% else %}
-                                                        <i class="far fa-star"></i>
-                                                    {% endif %}
-                                                {% endfor %}
-                                                <span class="ms-1">{{ highest_review.rating }} ({{ review_count }})</span>
-                                            {% endwith %}
-                                        {% endwith %}
-                                    {% else %}
-                                        <span class="text-muted">尚無評分</span>
-                                    {% endif %}
-                                {% endwith %}
-                            </div>
-                            <a href="{% url 'restaurant_detail' restaurant.pk %}" class="btn btn-sm btn-primary">查看詳情</a>
+    <!-- 搜尋過濾區域 -->
+    <div class="filter-section">
+        <form method="get" id="filter-form">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">🔍 搜尋餐廳</label>
+                    <div class="search-container">
+                        <input type="text" 
+                               class="form-control" 
+                               id="search-input" 
+                               name="name_or_address" 
+                               value="{{ request.GET.name_or_address }}"
+                               placeholder="輸入餐廳名稱、地址或分類關鍵字..."
+                               autocomplete="off">
+                        <div class="search-suggestions" id="search-suggestions">
+                            <!-- 搜索建議將在這裡顯示 -->
                         </div>
                     </div>
                 </div>
-            </div>
-        {% empty %}
-            <div class="col-12">
-                <div class="alert alert-info">
-                    找不到符合條件的餐廳。請嘗試其他過濾條件。
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">🍽️ 分類</label>
+                    {{ filter_form.category|as_crispy_field }}
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">⭐ 最低評分</label>
+                    {{ filter_form.min_rating|as_crispy_field }}
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-light w-100 fw-bold">
+                        <i class="fas fa-search me-2"></i>搜尋
+                    </button>
                 </div>
             </div>
-        {% endfor %}
+        </form>
     </div>
-    
-    <!-- 分頁控制 -->
-    {% if page_obj.has_other_pages %}
-        <nav aria-label="Page navigation" class="mt-4">
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="First">
-                            <span aria-hidden="true">&laquo;&laquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" aria-label="First">
-                            <span aria-hidden="true">&laquo;&laquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                {% endif %}
-                
-                {% for i in page_obj.paginator.page_range %}
-                    {% if page_obj.number == i %}
-                        <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
-                    {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+
+    <!-- 檢視切換 -->
+    <div class="d-flex justify-content-center mb-4">
+        <div class="view-toggle">
+            <button class="btn active" id="map-view-btn" onclick="showMapView()">
+                <i class="fas fa-map-marked-alt me-2"></i>地圖檢視
+            </button>
+            <button class="btn" id="list-view-btn" onclick="showListView()">
+                <i class="fas fa-list me-2"></i>列表檢視
+            </button>
+        </div>
+    </div>
+
+    <!-- 地圖區域 -->
+    <div id="map-section">
+        <div id="restaurant-map"></div>
+        {% if page_obj %}
+            <div class="alert alert-info text-center">
+                <i class="fas fa-map-marker-alt me-2"></i>
+                找到 {{ page_obj.paginator.count }} 間餐廳，點擊地圖標記查看詳細資訊
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 餐廳列表區域 -->
+    <div id="list-section" style="display: none;">
+        <div class="row">
+            {% for restaurant in page_obj %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card restaurant-card h-100">
+                        {% if restaurant.image %}
+                            <img src="{{ restaurant.image.url }}" class="card-img-top" alt="{{ restaurant.name }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <img src="{% static 'img/default-restaurant.jpg' %}" class="card-img-top" alt="{{ restaurant.name }}" style="height: 200px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">{{ restaurant.name }}</h5>
+                            <div class="mb-2">
+                                {% for category in restaurant.categories.all %}
+                                    <span class="badge bg-secondary rounded-pill">{{ category.name }}</span>
+                                {% endfor %}
+                            </div>
+                            <p class="card-text text-muted small">
+                                <i class="fas fa-map-marker-alt me-1"></i>{{ restaurant.address }}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="rating">
+                                    {% with restaurant.reviews.all as reviews %}
+                                        {% if reviews %}
+                                            {% with reviews|length as review_count %}
+                                                {% with reviews|dictsort:"rating"|last as highest_review %}
+                                                    {% for i in "12345" %}
+                                                        {% if forloop.counter <= highest_review.rating %}
+                                                            <i class="fas fa-star text-warning"></i>
+                                                        {% else %}
+                                                            <i class="far fa-star text-warning"></i>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                    <small class="ms-1 text-muted">{{ highest_review.rating }} ({{ review_count }})</small>
+                                                {% endwith %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <small class="text-muted">尚無評分</small>
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+                                <a href="{% url 'restaurant_detail' restaurant.pk %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>查看
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-search me-2"></i>
+                        找不到符合條件的餐廳。請嘗試其他搜尋條件。
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- 分頁控制 -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                            <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
                         </li>
                     {% endif %}
-                {% endfor %}
-                
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Last">
-                            <span aria-hidden="true">&raquo;&raquo;</span>
-                        </a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" aria-label="Last">
-                            <span aria-hidden="true">&raquo;&raquo;</span>
-                        </a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-    {% endif %}
+                    
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                        {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
 </div>
+
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initRestaurantMap" async defer></script>
+<script>
+let map;
+let markers = [];
+let infoWindow;
+
+function initRestaurantMap() {
+    // 設置中央大學的座標位置
+    const ncuLocation = { lat: 24.9677, lng: 121.1892 };
+    
+    // 創建地圖
+    map = new google.maps.Map(document.getElementById('restaurant-map'), {
+        center: ncuLocation,
+        zoom: 15,
+        styles: [
+            {
+                "featureType": "poi.business",
+                "elementType": "labels",
+                "stylers": [{"visibility": "off"}]
+            }
+        ]
+    });
+    
+    // 創建信息窗口
+    infoWindow = new google.maps.InfoWindow();
+    
+    // 添加中央大學標記
+    const ncuMarker = new google.maps.Marker({
+        position: ncuLocation,
+        map: map,
+        title: '國立中央大學',
+        icon: {
+            url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+        },
+        zIndex: 999
+    });
+    
+    // 添加餐廳標記
+    const restaurants = [
+        {% for restaurant in page_obj %}
+            {% if restaurant.lat and restaurant.lng %}
+            {
+                id: {{ restaurant.id }},
+                name: "{{ restaurant.name|escapejs }}",
+                address: "{{ restaurant.address|escapejs }}",
+                lat: {{ restaurant.lat }},
+                lng: {{ restaurant.lng }},
+                categories: "{% for category in restaurant.categories.all %}{{ category.name }}{% if not forloop.last %}, {% endif %}{% endfor %}",
+                {% if restaurant.image %}
+                image: "{{ restaurant.image.url }}",
+                {% else %}
+                image: "{% static 'img/default-restaurant.jpg' %}",
+                {% endif %}
+                url: "{% url 'restaurant_detail' restaurant.pk %}"
+            }{% if not forloop.last %},{% endif %}
+            {% endif %}
+        {% endfor %}
+    ];
+    
+    restaurants.forEach(restaurant => {
+        const marker = new google.maps.Marker({
+            position: { lat: restaurant.lat, lng: restaurant.lng },
+            map: map,
+            title: restaurant.name,
+            icon: {
+                url: "{% static 'images/logo.png' %}",
+                scaledSize: new google.maps.Size(40, 40),
+            }
+        });
+        
+        const infoContent = `
+            <div class="map-info-window">
+                <img src="${restaurant.image}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;">
+                <h6 class="fw-bold text-primary">${restaurant.name}</h6>
+                <p class="small text-muted mb-2">
+                    <i class="fas fa-map-marker-alt me-1"></i>${restaurant.address}
+                </p>
+                <p class="small mb-2">
+                    <i class="fas fa-tags me-1"></i>${restaurant.categories}
+                </p>
+                <a href="${restaurant.url}" class="btn btn-primary btn-sm w-100">
+                    <i class="fas fa-eye me-1"></i>查看詳情
+                </a>
+            </div>
+        `;
+        
+        marker.addListener('click', () => {
+            infoWindow.setContent(infoContent);
+            infoWindow.open(map, marker);
+        });
+        
+        markers.push(marker);
+    });
+    
+    // 如果有餐廳，調整地圖視野以包含所有餐廳
+    if (restaurants.length > 0) {
+        const bounds = new google.maps.LatLngBounds();
+        restaurants.forEach(restaurant => {
+            bounds.extend(new google.maps.LatLng(restaurant.lat, restaurant.lng));
+        });
+        bounds.extend(ncuLocation); // 也包含中央大學
+        map.fitBounds(bounds);
+    }
+}
+
+function showMapView() {
+    document.getElementById('map-section').style.display = 'block';
+    document.getElementById('list-section').style.display = 'none';
+    document.getElementById('map-view-btn').classList.add('active');
+    document.getElementById('list-view-btn').classList.remove('active');
+    
+    // 重新調整地圖大小
+    if (map) {
+        google.maps.event.trigger(map, 'resize');
+    }
+}
+
+function showListView() {
+    document.getElementById('map-section').style.display = 'none';
+    document.getElementById('list-section').style.display = 'block';
+    document.getElementById('map-view-btn').classList.remove('active');
+    document.getElementById('list-view-btn').classList.add('active');
+}
+
+// 搜索建議功能
+let searchTimeout;
+let currentSuggestionIndex = -1;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const searchSuggestions = document.getElementById('search-suggestions');
+    
+    // 輸入事件處理
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        // 清除之前的定時器
+        clearTimeout(searchTimeout);
+        
+        if (query.length < 2) {
+            hideSuggestions();
+            return;
+        }
+        
+        // 延遲搜索以避免過多請求
+        searchTimeout = setTimeout(() => {
+            fetchSuggestions(query);
+        }, 300);
+    });
+    
+    // 鍵盤導航
+    searchInput.addEventListener('keydown', function(e) {
+        const suggestions = searchSuggestions.querySelectorAll('.suggestion-item');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            currentSuggestionIndex = Math.min(currentSuggestionIndex + 1, suggestions.length - 1);
+            updateSuggestionSelection(suggestions);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            currentSuggestionIndex = Math.max(currentSuggestionIndex - 1, -1);
+            updateSuggestionSelection(suggestions);
+        } else if (e.key === 'Enter') {
+            if (currentSuggestionIndex >= 0 && suggestions[currentSuggestionIndex]) {
+                e.preventDefault();
+                selectSuggestion(suggestions[currentSuggestionIndex]);
+            }
+        } else if (e.key === 'Escape') {
+            hideSuggestions();
+        }
+    });
+    
+    // 點擊外部隱藏建議
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+            hideSuggestions();
+        }
+    });
+});
+
+function fetchSuggestions(query) {
+    fetch(`{% url 'search_suggestions' %}?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            displaySuggestions(data.suggestions, query);
+        })
+        .catch(error => {
+            console.error('搜索建議錯誤:', error);
+        });
+}
+
+function displaySuggestions(suggestions, query) {
+    const searchSuggestions = document.getElementById('search-suggestions');
+    
+    if (suggestions.length === 0) {
+        hideSuggestions();
+        return;
+    }
+    
+    let html = '';
+    
+    suggestions.forEach((suggestion, index) => {
+        if (suggestion.type === 'restaurant') {
+            const stars = generateStars(suggestion.avg_rating);
+            const highlightedName = highlightText(suggestion.name, query);
+            const highlightedAddress = highlightText(suggestion.address, query);
+            
+            html += `
+                <div class="suggestion-item" data-type="restaurant" data-id="${suggestion.id}" data-name="${suggestion.name}">
+                    <div class="suggestion-restaurant">
+                        ${suggestion.image_url ? 
+                            `<img src="${suggestion.image_url}" class="restaurant-image" alt="${suggestion.name}">` : 
+                            `<div class="restaurant-image" style="background: #f8f9fa; display: flex; align-items: center; justify-content: center; color: #6c757d;"><i class="fas fa-utensils"></i></div>`
+                        }
+                        <div class="restaurant-info">
+                            <div class="restaurant-name">${highlightedName}</div>
+                            <div class="restaurant-address">${highlightedAddress}</div>
+                            <div class="restaurant-rating">
+                                <div class="rating-stars">${stars}</div>
+                                <div class="rating-text">
+                                    ${suggestion.avg_rating > 0 ? `${suggestion.avg_rating} (${suggestion.review_count})` : '尚無評分'}
+                                </div>
+                            </div>
+                            ${suggestion.categories.length > 0 ? 
+                                `<div class="mt-1">${suggestion.categories.map(cat => `<span class="badge bg-secondary rounded-pill me-1" style="font-size: 0.7em;">${cat}</span>`).join('')}</div>` : 
+                                ''
+                            }
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (suggestion.type === 'category') {
+            const highlightedName = highlightText(suggestion.name, query);
+            
+            html += `
+                <div class="suggestion-item" data-type="category" data-name="${suggestion.name}">
+                    <div class="suggestion-category">
+                        <div class="category-icon">
+                            <i class="${suggestion.icon}"></i>
+                        </div>
+                        <div class="category-info">
+                            <div class="category-name">${highlightedName}</div>
+                            <div class="category-count">${suggestion.restaurant_count} 間餐廳</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    searchSuggestions.innerHTML = html;
+    searchSuggestions.style.display = 'block';
+    currentSuggestionIndex = -1;
+    
+    // 添加點擊事件
+    searchSuggestions.querySelectorAll('.suggestion-item').forEach(item => {
+        item.addEventListener('click', () => selectSuggestion(item));
+    });
+}
+
+function generateStars(rating) {
+    let stars = '';
+    for (let i = 1; i <= 5; i++) {
+        if (i <= rating) {
+            stars += '<i class="fas fa-star text-warning"></i>';
+        } else {
+            stars += '<i class="far fa-star text-warning"></i>';
+        }
+    }
+    return stars;
+}
+
+function highlightText(text, query) {
+    if (!query) return text;
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<span class="highlight">$1</span>');
+}
+
+function updateSuggestionSelection(suggestions) {
+    suggestions.forEach((item, index) => {
+        if (index === currentSuggestionIndex) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
+
+function selectSuggestion(item) {
+    const searchInput = document.getElementById('search-input');
+    const type = item.dataset.type;
+    
+    if (type === 'restaurant') {
+        searchInput.value = item.dataset.name;
+    } else if (type === 'category') {
+        searchInput.value = item.dataset.name;
+    }
+    
+    hideSuggestions();
+    
+    // 自動提交搜索
+    document.getElementById('filter-form').submit();
+}
+
+function hideSuggestions() {
+    document.getElementById('search-suggestions').style.display = 'none';
+    currentSuggestionIndex = -1;
+}
+</script>
 {% endblock %} 
