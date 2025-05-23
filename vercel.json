@@ -1,9 +1,10 @@
 {
   "version": 2,
+  "framework": null,
   "builds": [
     {
       "src": "api/index.py",
-      "use": "@vercel/python",
+      "use": "@vercel/python@3",
       "config": {
         "maxLambdaSize": "15mb",
         "runtime": "python3.9"
@@ -11,7 +12,10 @@
     },
     {
       "src": "api/hello.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python@3",
+      "config": {
+        "runtime": "python3.9"
+      }
     }
   ],
   "routes": [
@@ -29,7 +33,8 @@
   },
   "functions": {
     "api/*.py": {
-      "runtime": "python3.9"
+      "runtime": "python3.9",
+      "maxDuration": 10
     }
   }
 } 

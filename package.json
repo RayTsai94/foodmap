@@ -1,0 +1,8 @@
+{
+  "name": "ncu-food-map",
+  "version": "1.0.0",
+  "description": "NCU Food Map Django Application",
+  "private": true,
+  "scripts": {},
+  "dependencies": {}
+} 
