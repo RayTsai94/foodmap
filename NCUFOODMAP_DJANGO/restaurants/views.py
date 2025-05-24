@@ -5,6 +5,8 @@ from django.core.paginator import Paginator
 from django.conf import settings
 from .models import Restaurant, Category, Review, MenuItem
 from .forms import ReviewForm, RestaurantFilterForm
+from django.http import JsonResponse
+import json
 
 
 def home(request):
@@ -53,9 +55,25 @@ def restaurant_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # 傳遞 JSON 給 JS
+    restaurant_json = json.dumps([
+        {
+            'id': r.id,
+            'name': r.name,
+            'address': r.address,
+            'lat': r.lat,
+            'lng': r.lng,
+            'categories': ', '.join([c.name for c in r.categories.all()]),
+            'image': r.image.url if r.image else '/static/img/default-restaurant.jpg',
+            'url': f"/restaurants/{r.id}/"
+        }
+        for r in page_obj if r.lat and r.lng
+    ])
+    
     return render(request, 'restaurants/restaurant_list.html', {
         'page_obj': page_obj,
         'filter_form': filter_form,
+        'restaurant_json': restaurant_json,
     })
 
 def restaurant_detail(request, pk):
@@ -123,3 +141,16 @@ def map_view(request):
         'restaurants': restaurants,
         'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
     })
+
+def search_suggestions(request):
+    q = request.GET.get('q', '')
+    suggestions = []
+    if q:
+        restaurants = Restaurant.objects.filter(name__icontains=q)[:10]
+        for r in restaurants:
+            suggestions.append({
+                'name': r.name,
+                'address': r.address,
+                'rating': r.reviews.aggregate(Avg('rating'))['rating__avg'] or 0,
+            })
+    return JsonResponse({'suggestions': suggestions})

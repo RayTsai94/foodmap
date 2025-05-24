@@ -172,39 +172,36 @@
     </div>
     
     <!-- 搜尋過濾區域 -->
-    <div class="filter-section">
-        <form method="get" id="filter-form">
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">🔍 搜尋餐廳</label>
-                    <div class="search-container">
-                        <input type="text" 
-                               class="form-control" 
-                               id="search-input" 
-                               name="name_or_address" 
-                               value="{{ request.GET.name_or_address }}"
-                               placeholder="輸入餐廳名稱、地址或分類關鍵字..."
-                               autocomplete="off">
-                        <div class="search-suggestions" id="search-suggestions">
-                            <!-- 搜索建議將在這裡顯示 -->
+    <div class="d-flex justify-content-center">
+        <div class="filter-section" style="width:100%; max-width:700px;">
+            <form method="get" id="filter-form">
+                <div class="row mb-3 g-2">
+                    <div class="col-12">
+                        <label class="form-label fw-bold">🔍 搜尋餐廳</label>
+                        <div class="search-container">
+                            <input type="text" class="form-control form-control-sm"
+                                   id="search-input" name="name_or_address"
+                                   value="{{ request.GET.name_or_address }}"
+                                   placeholder="輸入餐廳名稱、地址或分類關鍵字..." autocomplete="off">
+                            <div class="search-suggestions" id="search-suggestions"></div>
                         </div>
                     </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold">🍽️ 分類</label>
+                        {{ filter_form.category|as_crispy_field }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold">⭐ 最低評分</label>
+                        {{ filter_form.min_rating|as_crispy_field }}
+                    </div>
+                    <div class="col-12 d-grid">
+                        <button type="submit" class="btn btn-light fw-bold" style="height:38px;">
+                            <i class="fas fa-search me-2"></i>搜尋
+                        </button>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-bold">🍽️ 分類</label>
-                    {{ filter_form.category|as_crispy_field }}
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-bold">⭐ 最低評分</label>
-                    {{ filter_form.min_rating|as_crispy_field }}
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-light w-100 fw-bold">
-                        <i class="fas fa-search me-2"></i>搜尋
-                    </button>
-                </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 
     <!-- 檢視切換 -->
@@ -340,6 +337,8 @@ let map;
 let markers = [];
 let infoWindow;
 
+const restaurants = {{ restaurant_json|safe }};
+
 function initRestaurantMap() {
     // 設置中央大學的座標位置
     const ncuLocation = { lat: 24.9677, lng: 121.1892 };
@@ -372,27 +371,6 @@ function initRestaurantMap() {
     });
     
     // 添加餐廳標記
-    const restaurants = [
-        {% for restaurant in page_obj %}
-            {% if restaurant.lat and restaurant.lng %}
-            {
-                id: {{ restaurant.id }},
-                name: "{{ restaurant.name|escapejs }}",
-                address: "{{ restaurant.address|escapejs }}",
-                lat: {{ restaurant.lat }},
-                lng: {{ restaurant.lng }},
-                categories: "{% for category in restaurant.categories.all %}{{ category.name }}{% if not forloop.last %}, {% endif %}{% endfor %}",
-                {% if restaurant.image %}
-                image: "{{ restaurant.image.url }}",
-                {% else %}
-                image: "{% static 'img/default-restaurant.jpg' %}",
-                {% endif %}
-                url: "{% url 'restaurant_detail' restaurant.pk %}"
-            }{% if not forloop.last %},{% endif %}
-            {% endif %}
-        {% endfor %}
-    ];
-    
     restaurants.forEach(restaurant => {
         const marker = new google.maps.Marker({
             position: { lat: restaurant.lat, lng: restaurant.lng },
