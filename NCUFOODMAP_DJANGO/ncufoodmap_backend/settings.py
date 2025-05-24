@@ -11,23 +11,31 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
+from dotenv import load_dotenv
+
+load_dotenv()  # 讀取 .env
+
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY")
+TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-fuu%f*!zbo3=x59j#!5@=hp8z=hy84)=txwn^c!bq(_u8q#&*6')
+SECRET_KEY = 'django-insecure-fuu%f*!zbo3=x59j#!5@=hp8z=hy84)=txwn^c!bq(_u8q#&*6'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Vercel 環境檢測
-DEBUG = os.environ.get('VERCEL_ENV') != 'production'
+DEBUG = True
 
-# Vercel 允許的主機
-ALLOWED_HOSTS = ['*']  # 允許所有主機，Vercel 會處理安全性
+ALLOWED_HOSTS = []
+
 
 # Application definition
 
@@ -73,7 +81,6 @@ SOCIALACCOUNT_PROVIDERS = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # 添加 WhiteNoise
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -104,6 +111,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ncufoodmap_backend.wsgi.application'
 
+
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
@@ -113,6 +121,7 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -132,24 +141,26 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
+
 TIME_ZONE = 'Asia/Taipei'
+
 USE_I18N = True
+
 USE_TZ = False
 
+
 # Static files (CSS, JavaScript, Images)
-# Vercel 靜態文件配置
-STATIC_URL = '/static/'
+# https://docs.djangoproject.com/en/4.2/howto/static-files/
+
+STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
-STATIC_ROOT = BASE_DIR / 'staticfiles_build' / 'static'
-
-# WhiteNoise 配置
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
 MEDIA_URL = '/media/'
@@ -168,8 +179,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # API金鑰設定
-GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', 'AIzaSyDL2GxWv1UIG0Iu-ja_55FlIT5Bcd9S2MA')
-TOGETHER_API_KEY = os.environ.get('TOGETHER_API_KEY', '3a1de39e3c6be2425f3e251c3271bca622b8f0156c3a9fa25f78149d05a1c5dd')
+GOOGLE_MAPS_API_KEY = 'AIzaSyDL2GxWv1UIG0Iu-ja_55FlIT5Bcd9S2MA'
+TOGETHER_API_KEY = '3a1de39e3c6be2425f3e251c3271bca622b8f0156c3a9fa25f78149d05a1c5dd'
 
 # 認證後端設定
 AUTHENTICATION_BACKENDS = (
@@ -177,16 +188,9 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 
-# 點擊app登入頁面
+#點擊app登入頁面
 LOGIN_URL = '/auth'
 
 # 登入和登出重定向設定
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
-
-# 禁用一些在 serverless 環境中可能有問題的功能
-if os.environ.get('VERCEL_ENV'):
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',  # 使用記憶體資料庫
-    }

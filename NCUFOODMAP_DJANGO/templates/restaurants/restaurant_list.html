@@ -175,7 +175,7 @@
     <div class="filter-section">
         <form method="get" id="filter-form">
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <label class="form-label fw-bold">🔍 搜尋餐廳</label>
                     <div class="search-container">
                         <input type="text" 
@@ -190,17 +190,19 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-2">
+            </div>
+            <div class="row">
+                <div class="col-md-4">
                     <label class="form-label fw-bold">🍽️ 分類</label>
                     {{ filter_form.category|as_crispy_field }}
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-4">
                     <label class="form-label fw-bold">⭐ 最低評分</label>
                     {{ filter_form.min_rating|as_crispy_field }}
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
+                <div class="col-md-4 d-flex align-items-end">
                     <button type="submit" class="btn btn-light w-100 fw-bold">
-                        <i class="fas fa-search me-2"></i>搜尋
+                        <i class="fas fa-search me-2"></i>搜尋餐廳
                     </button>
                 </div>
             </div>

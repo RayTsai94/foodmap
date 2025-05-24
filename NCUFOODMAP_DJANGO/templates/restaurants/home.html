@@ -5,6 +5,13 @@
 
 {% block extra_css %}
 <style>
+    #mainMap {
+        width: 100%;
+        height: 600px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+
     .bounce-logo {
         animation: bounce 2s infinite;
     }
@@ -156,7 +163,7 @@
 
 <section class="mb-5">
     <h2 class="text-center mb-4">打卡足跡檢索</h2>
-    <div id="mainMap" style="height: 400px;"></div>
+    <div id="mainMap"></div>
 </section>
 
 <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap" async defer></script>
