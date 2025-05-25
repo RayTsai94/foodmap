@@ -49,6 +49,14 @@
             margin-top: auto;
         }
 
+        /* 在手機版隱藏搜尋欄和使用者選單 */
+        @media (max-width: 991.98px) {
+            .navbar .search-container,
+            .navbar .user-container {
+                display: none !important;
+            }
+        }
+
         /* 回到頂部按鈕樣式 */
         #back-to-top {
             position: fixed;
@@ -75,7 +83,7 @@
         #ai-assistant {
             position: fixed;
             bottom: 80px;
-            right: 2vw;
+            right: 6vw;
             width: 350px;
             height: 400px;
             min-width: 300px;
@@ -87,7 +95,7 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             display: none;
             flex-direction: column;
-            z-index: 1000;
+            z-index: 2100;
             resize: none;
             overflow: hidden;
         }
@@ -250,7 +258,7 @@
             justify-content: center;
             font-size: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 1000;
+            z-index: 1001;
             transition: background-color 0.3s;
         }
 
@@ -263,12 +271,41 @@
             position: absolute;
             bottom: 0;
             left: 0;
-            width: 15px;
-            height: 15px;
+            width: 20px;
+            height: 20px;
             cursor: sw-resize;
-            background: linear-gradient(-45deg, #007bff 50%, transparent 50%);
-            border-radius: 0 0 0 10px;
             z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .resize-handle::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-left: 2px solid #007bff;
+            border-bottom: 2px solid #007bff;
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+        }
+
+        .resize-handle::after {
+            content: '';
+            width: 4px;
+            height: 4px;
+            border-left: 2px solid #007bff;
+            border-bottom: 2px solid #007bff;
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+        }
+
+        .resize-handle:hover {
+            opacity: 1;
         }
     </style>
 </head>
@@ -319,10 +356,10 @@
                             </ul>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'ai_recommendation:index' %}"><i class="fas fa-magic me-1"></i>AI 推薦</a>
+                            <a class="nav-link" href="{% url 'ai_recommendation:index' %}">AI 推薦</a>
                         </li>
                     </ul>
-                    <form class="d-flex me-2" action="{% url 'restaurant_list' %}" method="get">
+                    <form class="d-flex me-2 search-container" action="{% url 'restaurant_list' %}" method="get">
                         <div class="input-group">
                             <input class="form-control" type="search" placeholder="搜尋餐廳" name="name_or_address">
                             <button class="btn btn-outline-light" type="submit">
@@ -332,6 +369,7 @@
                     </form>
                     
                     <!-- 用戶登入/註冊區域 -->
+                    <div class="user-container">
                     {% if user.is_authenticated %}
                         <div class="dropdown">
                             <img src="{% if user.socialaccount_set.all.0.get_avatar_url %}{{ user.socialaccount_set.all.0.get_avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=random{% endif %}" 
@@ -359,6 +397,7 @@
                     {% else %}
                         <a href="{% url 'googleOauth:login' %}" class="btn btn-outline-light">登入/註冊</a>
                     {% endif %}
+                    </div>
                 </div>
             </div>
         </nav>
@@ -619,7 +658,7 @@
                     loadingElement.remove();
                 }
 
-                // 修改AI回應的添加方式
+                // 添加AI回應
                 if (data.response) {
                     chatMessages.innerHTML += `
                         <div class="message-wrapper assistant-message-wrapper">
@@ -629,17 +668,9 @@
                             </div>
                         </div>
                     `;
+                } else {
+                    throw new Error('No response from AI');
                 }
-
-                // 修改錯誤消息的添加方式
-                chatMessages.innerHTML += `
-                    <div class="message-wrapper assistant-message-wrapper">
-                        <div class="message assistant-message text-danger">
-                            <div class="message-content">抱歉，發生了一些錯誤。請稍後再試。</div>
-                            <div class="message-time">${timeString}</div>
-                        </div>
-                    </div>
-                `;
             } catch (error) {
                 console.error('Error:', error);
                 // 移除載入中提示
@@ -648,7 +679,7 @@
                     loadingElement.remove();
                 }
                 
-                // 顯示錯誤消息
+                // 只在發生錯誤時顯示錯誤消息
                 chatMessages.innerHTML += `
                     <div class="message-wrapper assistant-message-wrapper">
                         <div class="message assistant-message text-danger">
@@ -684,7 +715,8 @@
             document.addEventListener('mousemove', function(e) {
                 if (!isResizing) return;
 
-                const width = originalWidth - (e.clientX - originalX);  // 反向計算寬度
+                // 計算新的寬度和高度
+                const width = originalWidth - (e.clientX - originalX);
                 const height = originalHeight + (e.clientY - originalY);
 
                 // 限制最小和最大尺寸
@@ -693,11 +725,13 @@
                 const maxWidth = 800;
                 const maxHeight = window.innerHeight * 0.8;
 
+                // 調整寬度，但保持右側位置固定
                 if (width >= minWidth && width <= maxWidth) {
                     assistant.style.width = width + 'px';
-                    // 保持右側位置不變
-                    assistant.style.right = '2vw';
+                    // 不需要調整 right 值，因為已經在 CSS 中固定為 6vw
                 }
+
+                // 調整高度
                 if (height >= minHeight && height <= maxHeight) {
                     assistant.style.height = height + 'px';
                 }
@@ -715,6 +749,7 @@
                 if (assistant.offsetHeight > maxHeight) {
                     assistant.style.height = maxHeight + 'px';
                 }
+                // 不需要調整 right 值，因為使用 vw 單位會自動響應視窗大小變化
             });
         });
     </script>
