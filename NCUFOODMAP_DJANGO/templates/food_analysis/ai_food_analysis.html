@@ -128,16 +128,7 @@
                         
                         <!-- 營養佔比圖表 -->
                         <div class="row mt-4">
-                            <div class="col-md-6 mb-4">
-                                <div class="card bg-light h-100">
-                                    <div class="card-body">
-                                        <h5 class="text-center mb-3">營養素佔比</h5>
-                                        <canvas id="nutritionChart" class="nutrient-chart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-4">
+                            <div class="col-md-8 mx-auto">
                                 <div class="card bg-light h-100">
                                     <div class="card-body">
                                         <h5 class="text-center mb-3">營養素與參考攝取量比較</h5>
@@ -280,57 +271,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     {% if analysis_result and not analysis_result.error %}
         // 營養素佔比圖表
-        const proteinCalories = {% if analysis_result.protein %}{{ analysis_result.protein }} * 4{% else %}0{% endif %}; // 每克蛋白質4卡路里
-        const carbsCalories = {% if analysis_result.carbs %}{{ analysis_result.carbs }} * 4{% else %}0{% endif %}; // 每克碳水4卡路里
-        const fatCalories = {% if analysis_result.fat %}{{ analysis_result.fat }} * 9{% else %}0{% endif %}; // 每克脂肪9卡路里
+        const proteinValue = {% if analysis_result.protein %}{{ analysis_result.protein }}{% else %}0{% endif %};
+        const carbsValue = {% if analysis_result.carbs %}{{ analysis_result.carbs }}{% else %}0{% endif %};
+        const fatValue = {% if analysis_result.fat %}{{ analysis_result.fat }}{% else %}0{% endif %}; 
         
-        const totalCalories = proteinCalories + carbsCalories + fatCalories;
-        
-        const proteinPercentage = totalCalories > 0 ? Math.round(proteinCalories / totalCalories * 100) : 0;
-        const carbsPercentage = totalCalories > 0 ? Math.round(carbsCalories / totalCalories * 100) : 0;
-        const fatPercentage = totalCalories > 0 ? Math.round(fatCalories / totalCalories * 100) : 0;
-        
-        // 圓餅圖
-        const ctx = document.getElementById('nutritionChart').getContext('2d');
-        const nutritionChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['蛋白質 ' + proteinPercentage + '%', '碳水化合物 ' + carbsPercentage + '%', '脂肪 ' + fatPercentage + '%'],
-                datasets: [{
-                    data: [proteinPercentage, carbsPercentage, fatPercentage],
-                    backgroundColor: [
-                        'rgba(33, 150, 243, 0.8)',
-                        'rgba(76, 175, 80, 0.8)',
-                        'rgba(244, 67, 54, 0.8)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            font: {
-                                size: 14
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                return value + '%';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        // 條形圖 - 營養素與推薦攝取量對比
-        // 基於AI分析結果動態設置每日參考攝取量
+        // 根據AI分析結果動態設置每日參考攝取量
         // 根據性別、活動量和體重設置不同的DRI值
         let proteinDRI, carbsDRI, fatDRI;
         
@@ -364,27 +309,30 @@ document.addEventListener('DOMContentLoaded', function() {
             proteinDRI = 100; // 高蛋白飲食
         }
         
-        // 計算百分比
-        const proteinValue = {% if analysis_result.protein %}{{ analysis_result.protein }}{% else %}0{% endif %};
-        const carbsValue = {% if analysis_result.carbs %}{{ analysis_result.carbs }}{% else %}0{% endif %};
-        const fatValue = {% if analysis_result.fat %}{{ analysis_result.fat }}{% else %}0{% endif %}; 
-        
-        const proteinDRIPercentage = Math.round((proteinValue / proteinDRI) * 100);
-        const carbsDRIPercentage = Math.round((carbsValue / carbsDRI) * 100);
-        const fatDRIPercentage = Math.round((fatValue / fatDRI) * 100);
-        
         const barCtx = document.getElementById('nutritionBarChart').getContext('2d');
         const nutritionBarChart = new Chart(barCtx, {
             type: 'bar',
             data: {
-                labels: ['蛋白質', '碳水化合物', '脂肪'],
+                labels: ['蛋白質', '碳水化合物', '總脂肪', '飽和脂肪', '反式脂肪', '糖', '鈉'],
                 datasets: [{
                     label: '佔每日參考攝取量百分比',
-                    data: [proteinDRIPercentage, carbsDRIPercentage, fatDRIPercentage],
+                    data: [
+                        Math.round((proteinValue / proteinDRI) * 100),
+                        Math.round((carbsValue / carbsDRI) * 100),
+                        Math.round((fatValue / fatDRI) * 100),
+                        Math.round(({% if analysis_result.saturated_fat %}{{ analysis_result.saturated_fat }}{% else %}0{% endif %} / 20) * 100),
+                        Math.round(({% if analysis_result.trans_fat %}{{ analysis_result.trans_fat }}{% else %}0{% endif %} / 2) * 100),
+                        Math.round(({% if analysis_result.sugar %}{{ analysis_result.sugar }}{% else %}0{% endif %} / 50) * 100),
+                        Math.round(({% if analysis_result.sodium %}{{ analysis_result.sodium }}{% else %}0{% endif %} / 2000) * 100)
+                    ],
                     backgroundColor: [
-                        'rgba(33, 150, 243, 0.8)',
-                        'rgba(76, 175, 80, 0.8)',
-                        'rgba(244, 67, 54, 0.8)'
+                        'rgba(33, 150, 243, 0.8)',  // 蛋白質
+                        'rgba(76, 175, 80, 0.8)',   // 碳水化合物
+                        'rgba(244, 67, 54, 0.8)',   // 總脂肪
+                        'rgba(255, 152, 0, 0.8)',   // 飽和脂肪
+                        'rgba(156, 39, 176, 0.8)',  // 反式脂肪
+                        'rgba(233, 30, 99, 0.8)',   // 糖
+                        'rgba(96, 125, 139, 0.8)'   // 鈉
                     ],
                     borderWidth: 1
                 }]
@@ -393,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: Math.max(proteinDRIPercentage, carbsDRIPercentage, fatDRIPercentage, 100) + 10,
+                        max: 100,
                         title: {
                             display: true,
                             text: '百分比 (%)'
@@ -410,11 +358,33 @@ document.addEventListener('DOMContentLoaded', function() {
                         callbacks: {
                             label: function(context) {
                                 const value = context.raw || 0;
-                                const nutrientValue = context.dataIndex === 0 ? proteinValue :
-                                    context.dataIndex === 1 ? carbsValue : fatValue;
-                                const dri = context.dataIndex === 0 ? proteinDRI : 
-                                    context.dataIndex === 1 ? carbsDRI : fatDRI;
-                                return `${nutrientValue}克 (${value}% 建議攝取量 ${dri}克)`;
+                                let nutrientValue, dri;
+                                switch(context.dataIndex) {
+                                    case 0:
+                                        nutrientValue = proteinValue;
+                                        dri = proteinDRI;
+                                        return `蛋白質: ${nutrientValue}克 (${value}% 建議攝取量 ${dri}克)`;
+                                    case 1:
+                                        nutrientValue = carbsValue;
+                                        dri = carbsDRI;
+                                        return `碳水化合物: ${nutrientValue}克 (${value}% 建議攝取量 ${dri}克)`;
+                                    case 2:
+                                        nutrientValue = fatValue;
+                                        dri = fatDRI;
+                                        return `總脂肪: ${nutrientValue}克 (${value}% 建議攝取量 ${dri}克)`;
+                                    case 3:
+                                        nutrientValue = {% if analysis_result.saturated_fat %}{{ analysis_result.saturated_fat }}{% else %}0{% endif %};
+                                        return `飽和脂肪: ${nutrientValue}克 (${value}% 建議攝取量 20克)`;
+                                    case 4:
+                                        nutrientValue = {% if analysis_result.trans_fat %}{{ analysis_result.trans_fat }}{% else %}0{% endif %};
+                                        return `反式脂肪: ${nutrientValue}克 (${value}% 建議攝取量 2克)`;
+                                    case 5:
+                                        nutrientValue = {% if analysis_result.sugar %}{{ analysis_result.sugar }}{% else %}0{% endif %};
+                                        return `糖: ${nutrientValue}克 (${value}% 建議攝取量 50克)`;
+                                    case 6:
+                                        nutrientValue = {% if analysis_result.sodium %}{{ analysis_result.sodium }}{% else %}0{% endif %};
+                                        return `鈉: ${nutrientValue}毫克 (${value}% 建議攝取量 2000毫克)`;
+                                }
                             }
                         }
                     },
@@ -488,9 +458,9 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
                 label: '實際攝取',
                 data: [
-                    proteinDRIPercentage,
-                    carbsDRIPercentage,
-                    fatDRIPercentage,
+                    Math.round((proteinValue / proteinDRI) * 100),
+                    Math.round((carbsValue / carbsDRI) * 100),
+                    Math.round((fatValue / fatDRI) * 100),
                     fiberPercentage,
                     vitaminPercentage,
                     mineralPercentage
@@ -541,32 +511,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
-        
-        // 添加DOM元素直接顯示百分比
-        const nutritionContainer = document.getElementById('nutritionChart').parentNode;
-        const percentagesDiv = document.createElement('div');
-        percentagesDiv.className = 'row text-center mt-3';
-        percentagesDiv.innerHTML = `
-            <div class="col-md-4">
-                <div class="p-2" style="background-color: rgba(33, 150, 243, 0.2); border-radius: 4px;">
-                    <span style="color: rgba(33, 150, 243, 1); font-weight: bold; font-size: 1.2rem;">${proteinPercentage}%</span>
-                    <br>蛋白質
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="p-2" style="background-color: rgba(76, 175, 80, 0.2); border-radius: 4px;">
-                    <span style="color: rgba(76, 175, 80, 1); font-weight: bold; font-size: 1.2rem;">${carbsPercentage}%</span>
-                    <br>碳水化合物
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="p-2" style="background-color: rgba(244, 67, 54, 0.2); border-radius: 4px;">
-                    <span style="color: rgba(244, 67, 54, 1); font-weight: bold; font-size: 1.2rem;">${fatPercentage}%</span>
-                    <br>脂肪
-                </div>
-            </div>
-        `;
-        nutritionContainer.appendChild(percentagesDiv);
     {% endif %}
 });
 </script>
