@@ -17,7 +17,8 @@ from django.http import JsonResponse
 
 @login_required
 def render_map_data(request):
-    checkins = Checkin.objects.filter(user=request.user)
+    # 獲取所有使用者的打卡記錄
+    checkins = Checkin.objects.all()
     data = [
         {
             'latitude': c.latitude,
@@ -26,6 +27,10 @@ def render_map_data(request):
             'item': c.item,
             'price': c.price,
             'comment': c.comment,
+            'date': c.date.strftime('%Y-%m-%d %H:%M'),
+            'user_name': c.user.get_full_name() or c.user.username,
+            'rating': c.rating,
+            'is_current_user': c.user == request.user
         }
         for c in checkins if c.latitude and c.longitude
     ]

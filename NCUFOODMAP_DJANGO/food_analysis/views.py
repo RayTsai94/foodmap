@@ -222,21 +222,17 @@ def ai_food_analysis(request):
             
             # 準備圖表數據
             chart_data = {
-                'nutrition_pie': {
-                    'labels': ['蛋白質', '碳水化合物', '脂肪'],
-                    'data': [
-                        analysis_result.get('protein', 0),
-                        analysis_result.get('carbs', 0),
-                        analysis_result.get('fat', 0)
-                    ]
-                },
                 'nutrition_bar': {
-                    'labels': ['熱量', '蛋白質', '碳水化合物', '脂肪'],
+                    'labels': ['熱量', '蛋白質', '碳水化合物', '總脂肪', '飽和脂肪', '反式脂肪', '糖', '鈉'],
                     'data': [
                         analysis_result.get('calories', 0),
                         analysis_result.get('protein', 0),
                         analysis_result.get('carbs', 0),
-                        analysis_result.get('fat', 0)
+                        analysis_result.get('fat', 0),
+                        analysis_result.get('saturated_fat', 0),
+                        analysis_result.get('trans_fat', 0),
+                        analysis_result.get('sugar', 0),
+                        analysis_result.get('sodium', 0)
                     ]
                 },
                 'radar': {
@@ -282,7 +278,9 @@ def analyze_food(food_description):
     "calories": 數值,  // 熱量（卡）
     "protein": 數值,   // 蛋白質（克）
     "carbs": 數值,     // 碳水化合物（克）
-    "fat": 數值,       // 脂肪（克）
+    "fat": 數值,       // 總脂肪（克）
+    "saturated_fat": 數值, // 飽和脂肪（克）
+    "trans_fat": 數值,    // 反式脂肪（克）
     "fiber": 數值,     // 膳食纖維（克）
     "sugar": 數值,     // 糖分（克）
     "sodium": 數值,    // 鈉（毫克）
@@ -325,6 +323,8 @@ def analyze_food(food_description):
                 'protein': 0,
                 'carbs': 0,
                 'fat': 0,
+                'saturated_fat': 0,
+                'trans_fat': 0,
                 'fiber': 0,
                 'sugar': 0,
                 'sodium': 0,
@@ -344,6 +344,8 @@ def analyze_food(food_description):
                 'protein': 0,
                 'carbs': 0,
                 'fat': 0,
+                'saturated_fat': 0,
+                'trans_fat': 0,
                 'fiber': 0,
                 'sugar': 0,
                 'sodium': 0,
@@ -363,6 +365,8 @@ def analyze_food(food_description):
             'protein': 0,
             'carbs': 0,
             'fat': 0,
+            'saturated_fat': 0,
+            'trans_fat': 0,
             'fiber': 0,
             'sugar': 0,
             'sodium': 0,

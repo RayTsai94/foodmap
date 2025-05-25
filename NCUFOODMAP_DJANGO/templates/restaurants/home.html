@@ -172,14 +172,54 @@ function initMap() {
   const map = new google.maps.Map(document.getElementById("mainMap"), {
     center: { lat: 24.968, lng: 121.193 },
     zoom: 16,
+    styles: [
+      {
+        featureType: "poi",
+        elementType: "labels",
+        stylers: [{ visibility: "off" }]
+      }
+    ]
   });
+
+  // 處理重疊標記的函數
+  function adjustOverlappingMarkers(markers) {
+    const locationMap = new Map(); // 用來存儲每個位置的標記數量
+    
+    markers.forEach(marker => {
+      const key = `${marker.getPosition().lat()},${marker.getPosition().lng()}`;
+      if (!locationMap.has(key)) {
+        locationMap.set(key, []);
+      }
+      locationMap.get(key).push(marker);
+    });
+
+    // 對於每個有多個標記的位置，進行偏移
+    locationMap.forEach(markersAtLocation => {
+      if (markersAtLocation.length > 1) {
+        const radius = 0.00001; // 大約15米的偏移
+        markersAtLocation.forEach((marker, index) => {
+          if (index > 0) { // 第一個標記保持原位
+            const angle = (2 * Math.PI * index) / markersAtLocation.length;
+            const newLat = marker.getPosition().lat() + radius * Math.cos(angle);
+            const newLng = marker.getPosition().lng() + radius * Math.sin(angle);
+            marker.setPosition(new google.maps.LatLng(newLat, newLng));
+          }
+        });
+      }
+    });
+  }
 
   // 抓取打卡資料並加上 Marker
   fetch('/checkin/json')
     .then(response => response.json())
     .then(data => {
       const infoWindow = new google.maps.InfoWindow();  // 共用一個 InfoWindow
-      data.forEach(checkin => {
+      const markers = data.map(checkin => {
+        // 根據是否為當前用戶選擇不同的圖標
+        const iconUrl = checkin.is_current_user 
+          ? "{% static 'images/logo.png' %}"  // 自己的打卡使用特別圖標
+          : "{% static 'images/logo2.png' %}"; // 其他用戶的打卡使用雞蛋圖標
+
         const marker = new google.maps.Marker({
           position: {
             lat: parseFloat(checkin.latitude),
@@ -188,24 +228,52 @@ function initMap() {
           map: map,
           title: checkin.restaurant_name,
           icon: {
-            url: "{% static 'img/logo.png' %}",
+            url: iconUrl,
             scaledSize: new google.maps.Size(50, 50),
-          },
+          }
         });
 
         // 點擊 Marker 顯示資訊視窗
         marker.addListener("click", () => {
+          // 創建評分星星
+          const stars = '★'.repeat(Math.floor(checkin.rating)) + '☆'.repeat(5 - Math.floor(checkin.rating));
+          
           const content = `
-            <div>
-              <h5>${checkin.restaurant_name}</h5>
-              <span>${checkin.item}</span>
-              <span>${checkin.price} 元</span>
-              <p>${checkin.comment}</p>
+            <div class="map-info-window" style="padding: 15px; max-width: 300px;">
+              <h5 style="margin: 0 0 10px 0; color: #333;">${checkin.restaurant_name}</h5>
+              <div style="margin-bottom: 8px;">
+                <span style="color: #666;">
+                  <i class="fas fa-user"></i> ${checkin.is_current_user ? '我' : checkin.user_name}
+                </span>
+                <span style="margin-left: 10px; color: #666;">
+                  <i class="fas fa-calendar"></i> ${checkin.date}
+                </span>
+              </div>
+              <div style="margin-bottom: 8px; color: #ff9800;">
+                ${stars} ${checkin.rating.toFixed(1)}
+              </div>
+              <div style="margin-bottom: 8px;">
+                <strong style="color: #4CAF50;">$ ${checkin.price}</strong>
+                <span style="margin-left: 10px;">${checkin.item}</span>
+              </div>
+              <p style="margin: 0; color: #666; font-style: italic;">
+                "${checkin.comment}"
+              </p>
             </div>`;
             
           infoWindow.setContent(content);
           infoWindow.open(map, marker);
         });
+
+        return marker;
+      });
+
+      // 處理重疊的標記
+      adjustOverlappingMarkers(markers);
+
+      // 添加聚類功能
+      new MarkerClusterer(map, markers, {
+        imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
       });
     })
     .catch(error => console.error("載入打卡資料失敗:", error));
