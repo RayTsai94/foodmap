@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}確認刪除帳戶 - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>確認刪除帳戶</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-circle me-2"></i>警告</h5>
+                        <p>此操作將會：</p>
+                        <ul style="list-style-type: none;">
+                            <li>永久刪除您的帳戶</li>
+                            <li>刪除您的所有個人資料</li>
+                            <li>無法恢復已刪除的資料</li>
+                        </ul>
+                    </div>
+                    
+                    <p class="text-danger text-center">請確認您真的要刪除帳戶嗎？</p>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'home' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>取消
+                        </a>
+                        <form method="post" action="{% url 'delete_account' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt me-2"></i>確認刪除帳戶
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
