@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'checkin',
     'article',
     'ai_recommendation',
+    'ai_assistant',
 ]
 
 # Google OAuth 配置
@@ -194,3 +195,24 @@ LOGIN_URL = '/auth'
 # 登入和登出重定向設定
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+# 日誌配置
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+        },
+    },
+    'loggers': {
+        'ai_assistant': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+        },
+    },
+}
