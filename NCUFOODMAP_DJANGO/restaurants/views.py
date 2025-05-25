@@ -3,6 +3,8 @@ from django.contrib import messages
 from django.db.models import Avg, Q
 from django.core.paginator import Paginator
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 from .models import Restaurant, Category, Review, MenuItem
 from .forms import ReviewForm, RestaurantFilterForm
 from django.http import JsonResponse
@@ -154,3 +156,17 @@ def search_suggestions(request):
                 'rating': r.reviews.aggregate(Avg('rating'))['rating__avg'] or 0,
             })
     return JsonResponse({'suggestions': suggestions})
+
+@login_required
+def delete_account(request):
+    """刪除用戶帳戶"""
+    if request.method == 'POST':
+        user = request.user
+        # 登出用戶
+        logout(request)
+        # 刪除用戶
+        user.delete()
+        messages.success(request, '您的帳戶已經成功刪除。')
+        return redirect('home')
+    # GET 請求顯示確認頁面
+    return render(request, 'restaurants/confirm_delete_account.html')
