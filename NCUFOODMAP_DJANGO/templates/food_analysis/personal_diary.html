@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}我的飲食日記 - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4"><i class="fas fa-book me-2"></i>我的飲食日記</h1>
+            <p class="lead mb-5">記錄您的每日飲食，AI 會自動分析營養成分並提供健康建議</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 左側：記錄新的飲食 -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-plus me-2"></i>記錄新的飲食</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {{ form.meal_type.label_tag }}
+                            {{ form.meal_type }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.food_description.label_tag }}
+                            {{ form.food_description }}
+                            <div class="form-text">{{ form.food_description.help_text }}</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-magic me-2"></i>記錄並分析
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 今日營養總結 -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-calendar-day me-2"></i>今日營養總結</h4>
+                </div>
+                <div class="card-body">
+                    {% if today_summary %}
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <div class="stat-box text-center">
+                                <h4 class="text-primary">{{ today_summary.total_calories }}</h4>
+                                <p class="mb-0">總熱量 (卡)</p>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="stat-box text-center">
+                                <h4 class="text-info">{{ today_summary.total_protein|floatformat:1 }}g</h4>
+                                <p class="mb-0">蛋白質</p>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="stat-box text-center">
+                                <h4 class="text-warning">{{ today_summary.total_carbs|floatformat:1 }}g</h4>
+                                <p class="mb-0">碳水化合物</p>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="stat-box text-center">
+                                <h4 class="text-danger">{{ today_summary.total_fat|floatformat:1 }}g</h4>
+                                <p class="mb-0">脂肪</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <p class="mb-0"><strong>今日已記錄 {{ today_summary.meal_count }} 餐</strong></p>
+                        <a href="{% url 'personal_nutrition_dashboard' %}" class="btn btn-outline-success btn-sm mt-2">
+                            查看詳細分析
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-utensils fa-3x mb-3"></i>
+                        <p>今天還沒有記錄任何飲食</p>
+                        <p class="small">開始記錄您的第一餐吧！</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：最近的飲食記錄 -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0"><i class="fas fa-history me-2"></i>最近的飲食記錄</h4>
+                </div>
+                <div class="card-body">
+                    {% if recent_records %}
+                        {% for record in recent_records %}
+                        <div class="border-bottom pb-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">
+                                        <span class="badge bg-secondary me-2">{{ record.get_meal_type_display }}</span>
+                                        {{ record.date_consumed }}
+                                    </h6>
+                                    <p class="mb-2">{{ record.food_description }}</p>
+                                    
+                                    {% if record.calories %}
+                                    <div class="row">
+                                        <div class="col-3">
+                                            <small class="text-muted">熱量</small><br>
+                                            <strong>{{ record.calories }} 卡</strong>
+                                        </div>
+                                        <div class="col-3">
+                                            <small class="text-muted">蛋白質</small><br>
+                                            <strong>{{ record.protein|floatformat:1 }}g</strong>
+                                        </div>
+                                        <div class="col-3">
+                                            <small class="text-muted">碳水</small><br>
+                                            <strong>{{ record.carbs|floatformat:1 }}g</strong>
+                                        </div>
+                                        <div class="col-3">
+                                            <small class="text-muted">脂肪</small><br>
+                                            <strong>{{ record.fat|floatformat:1 }}g</strong>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if record.nutritional_analysis %}
+                                    <div class="mt-2">
+                                        <small class="text-muted">AI 分析：</small>
+                                        <p class="small">{{ record.nutritional_analysis|truncatewords:20 }}</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="text-center">
+                            <a href="{% url 'personal_nutrition_dashboard' %}" class="btn btn-outline-primary">
+                                查看完整記錄
+                            </a>
+                        </div>
+                    {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                        <p>還沒有飲食記錄</p>
+                        <p class="small">開始記錄您的飲食，建立健康的飲食習慣！</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 使用提示 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>使用提示</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-edit text-primary me-2"></i>詳細描述</h6>
+                            <p class="small">請詳細描述食物內容，例如：「一碗牛肉麵加滷蛋和小菜」，AI 分析會更準確。</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-clock text-success me-2"></i>及時記錄</h6>
+                            <p class="small">建議在用餐後立即記錄，這樣可以更準確地追蹤您的飲食習慣。</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-chart-line text-info me-2"></i>定期檢視</h6>
+                            <p class="small">定期查看個人營養分析，了解您的飲食趨勢和改善建議。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

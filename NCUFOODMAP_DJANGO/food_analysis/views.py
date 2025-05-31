@@ -1,13 +1,17 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Avg, Sum
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
+from datetime import datetime, timedelta
 from restaurants.models import MenuItem, Restaurant
-from .models import NutritionInfo, Ingredient, FoodPreference
+from .models import NutritionInfo, Ingredient, FoodPreference, PersonalFoodRecord, PersonalNutritionSummary
+from .forms import FoodAnalysisForm, PersonalFoodRecordForm
 import random
 import os
 import json
 import together
 from dotenv import load_dotenv
-from .forms import FoodAnalysisForm
 
 # 載入環境變數
 load_dotenv()
@@ -25,26 +29,61 @@ def nutrition_dashboard(request):
         avg_calories=Avg('calories'),
         avg_protein=Avg('protein'),
         avg_carbs=Avg('carbs'),
-        avg_fat=Avg('fat')
+        avg_fat=Avg('fat'),
+        avg_fiber=Avg('fiber'),
+        avg_sugar=Avg('sugar'),
+        avg_sodium=Avg('sodium')
     )
     
     # 獲取低熱量（健康）選擇
     healthy_choices = MenuItem.objects.filter(
         nutrition__calories__lt=500,
         is_available=True
-    ).order_by('nutrition__calories')[:5]
+    ).order_by('nutrition__calories')[:6]
+    
+    # 獲取高蛋白選擇
+    high_protein_choices = MenuItem.objects.filter(
+        nutrition__protein__gte=20,
+        is_available=True
+    ).order_by('-nutrition__protein')[:6]
     
     # 按餐廳分組的營養信息
     restaurant_nutrition = Restaurant.objects.filter(
         menu_items__nutrition__isnull=False
     ).distinct().annotate(
-        avg_calories=Avg('menu_items__nutrition__calories')
+        avg_calories=Avg('menu_items__nutrition__calories'),
+        avg_protein=Avg('menu_items__nutrition__protein'),
+        menu_count=Count('menu_items')
     ).order_by('avg_calories')
+    
+    # 營養分布統計
+    nutrition_stats = {
+        'low_calorie_count': MenuItem.objects.filter(nutrition__calories__lt=300, is_available=True).count(),
+        'medium_calorie_count': MenuItem.objects.filter(nutrition__calories__gte=300, nutrition__calories__lt=600, is_available=True).count(),
+        'high_calorie_count': MenuItem.objects.filter(nutrition__calories__gte=600, is_available=True).count(),
+        'high_protein_count': MenuItem.objects.filter(nutrition__protein__gte=20, is_available=True).count(),
+        'low_fat_count': MenuItem.objects.filter(nutrition__fat__lt=10, is_available=True).count(),
+        'total_items': MenuItem.objects.filter(nutrition__isnull=False, is_available=True).count()
+    }
+    
+    # 每日營養建議值（成人標準）
+    daily_recommendations = {
+        'calories': 2000,
+        'protein': 50,
+        'carbs': 300,
+        'fat': 65,
+        'fiber': 25,
+        'sugar': 50,
+        'sodium': 2300
+    }
     
     return render(request, 'food_analysis/dashboard.html', {
         'avg_nutrition': avg_nutrition,
         'healthy_choices': healthy_choices,
+        'high_protein_choices': high_protein_choices,
         'restaurant_nutrition': restaurant_nutrition,
+        'nutrition_stats': nutrition_stats,
+        'daily_recommendations': daily_recommendations,
     })
 
 def dietary_preferences(request):
@@ -62,14 +101,48 @@ def dietary_preferences(request):
         )
         
         if compatible_items.exists():
+            # 計算平均營養值
+            avg_nutrition = compatible_items.aggregate(
+                avg_calories=Avg('nutrition__calories'),
+                avg_protein=Avg('nutrition__protein'),
+                avg_carbs=Avg('nutrition__carbs'),
+                avg_fat=Avg('nutrition__fat')
+            )
+            
             preferences_with_items.append({
                 'preference': pref,
-                'items': compatible_items[:5],  # 僅顯示前5項
-                'total_count': compatible_items.count()
+                'items': compatible_items[:6],  # 顯示前6項
+                'total_count': compatible_items.count(),
+                'avg_nutrition': avg_nutrition,
+                'restaurants_count': compatible_items.values('restaurant').distinct().count()
             })
+    
+    # 飲食偏好統計
+    preference_stats = {
+        'vegetarian_count': MenuItem.objects.filter(
+            preferences__preference__name__icontains='素食',
+            preferences__is_compatible=True,
+            is_available=True
+        ).count(),
+        'vegan_count': MenuItem.objects.filter(
+            preferences__preference__name__icontains='全素',
+            preferences__is_compatible=True,
+            is_available=True
+        ).count(),
+        'gluten_free_count': MenuItem.objects.filter(
+            preferences__preference__name__icontains='無麩質',
+            preferences__is_compatible=True,
+            is_available=True
+        ).count(),
+        'low_carb_count': MenuItem.objects.filter(
+            nutrition__carbs__lt=20,
+            is_available=True
+        ).count()
+    }
     
     return render(request, 'food_analysis/dietary_preferences.html', {
         'preferences_with_items': preferences_with_items,
+        'preference_stats': preference_stats,
     })
 
 def allergen_info(request):
@@ -77,7 +150,7 @@ def allergen_info(request):
     # 獲取所有過敏原偏好
     allergens = FoodPreference.objects.filter(type='ALLERGY')
     
-    # 為每個過敏原獲取不兼容的菜單項
+    # 為每個過敏原獲取不兼容的菜單項（即不含該過敏原的菜單）
     allergen_free_items = []
     for allergen in allergens:
         free_items = MenuItem.objects.filter(
@@ -87,14 +160,85 @@ def allergen_info(request):
         )
         
         if free_items.exists():
+            # 計算安全選擇的營養統計
+            avg_nutrition = free_items.aggregate(
+                avg_calories=Avg('nutrition__calories'),
+                avg_protein=Avg('nutrition__protein')
+            )
+            
             allergen_free_items.append({
                 'allergen': allergen,
-                'items': free_items[:5],
-                'total_count': free_items.count()
+                'items': free_items[:6],
+                'total_count': free_items.count(),
+                'avg_nutrition': avg_nutrition,
+                'restaurants_count': free_items.values('restaurant').distinct().count()
             })
+    
+    # 過敏原統計
+    allergen_stats = {
+        'gluten_free_count': MenuItem.objects.filter(
+            preferences__preference__name__icontains='麩質',
+            preferences__is_compatible=False,
+            is_available=True
+        ).count(),
+        'dairy_free_count': MenuItem.objects.filter(
+            preferences__preference__name__icontains='乳製品',
+            preferences__is_compatible=False,
+            is_available=True
+        ).count(),
+        'nut_free_count': MenuItem.objects.filter(
+            preferences__preference__name__icontains='堅果',
+            preferences__is_compatible=False,
+            is_available=True
+        ).count(),
+        'seafood_free_count': MenuItem.objects.filter(
+            preferences__preference__name__icontains='海鮮',
+            preferences__is_compatible=False,
+            is_available=True
+        ).count(),
+        'total_safe_items': MenuItem.objects.filter(
+            preferences__preference__type='ALLERGY',
+            preferences__is_compatible=False,
+            is_available=True
+        ).distinct().count()
+    }
+    
+    # 常見過敏原資訊
+    common_allergens = [
+        {
+            'name': '麩質 (小麥)',
+            'description': '存在於小麥、大麥、黑麥等穀物中',
+            'symptoms': '腹痛、腹瀉、皮疹、疲勞',
+            'avoid_foods': '麵包、麵條、啤酒、醬油',
+            'safe_alternatives': '米飯、玉米、藜麥、無麩質產品'
+        },
+        {
+            'name': '乳製品',
+            'description': '包含牛奶蛋白或乳糖',
+            'symptoms': '腹脹、腹瀉、皮疹、呼吸困難',
+            'avoid_foods': '牛奶、起司、奶油、優格',
+            'safe_alternatives': '豆漿、杏仁奶、椰奶、燕麥奶'
+        },
+        {
+            'name': '堅果',
+            'description': '包括樹堅果和花生',
+            'symptoms': '蕁麻疹、腫脹、呼吸困難、過敏性休克',
+            'avoid_foods': '花生、杏仁、核桃、腰果',
+            'safe_alternatives': '葵花籽、南瓜籽、椰子'
+        },
+        {
+            'name': '海鮮',
+            'description': '魚類、貝類、甲殼類',
+            'symptoms': '皮疹、腫脹、噁心、呼吸困難',
+            'avoid_foods': '魚、蝦、蟹、貝類',
+            'safe_alternatives': '雞肉、豬肉、豆腐、蛋類'
+        }
+    ]
     
     return render(request, 'food_analysis/allergen_info.html', {
         'allergen_free_items': allergen_free_items,
+        'allergen_stats': allergen_stats,
+        'common_allergens': common_allergens,
     })
 
 def ingredient_analysis(request):
@@ -107,18 +251,85 @@ def ingredient_analysis(request):
     # 獲取每種食材的使用詳情
     ingredients_with_details = []
     for ing in top_ingredients:
-        menu_items = MenuItem.objects.filter(ingredients__ingredient=ing)
+        menu_items = MenuItem.objects.filter(ingredients__ingredient=ing, is_available=True)
         restaurants = Restaurant.objects.filter(menu_items__in=menu_items).distinct()
+        
+        # 計算包含此食材的菜單平均營養值
+        avg_nutrition = menu_items.aggregate(
+            avg_calories=Avg('nutrition__calories'),
+            avg_protein=Avg('nutrition__protein'),
+            avg_carbs=Avg('nutrition__carbs'),
+            avg_fat=Avg('nutrition__fat')
+        )
         
         ingredients_with_details.append({
             'ingredient': ing,
-            'menu_items': menu_items[:5],
+            'menu_items': menu_items[:6],
             'menu_item_count': menu_items.count(),
-            'restaurant_count': restaurants.count()
+            'restaurant_count': restaurants.count(),
+            'avg_nutrition': avg_nutrition
         })
+    
+    # 食材分類統計
+    ingredient_categories = {
+        'vegetables': Ingredient.objects.filter(
+            name__in=['番茄', '洋蔥', '高麗菜', '紅蘿蔔', '青椒', '菠菜', '生菜']
+        ).annotate(usage_count=Count('menu_items')).order_by('-usage_count'),
+        'proteins': Ingredient.objects.filter(
+            name__in=['雞肉', '豬肉', '牛肉', '魚肉', '蛋', '豆腐', '蝦']
+        ).annotate(usage_count=Count('menu_items')).order_by('-usage_count'),
+        'grains': Ingredient.objects.filter(
+            name__in=['米飯', '麵條', '麵包', '玉米', '燕麥', '藜麥']
+        ).annotate(usage_count=Count('menu_items')).order_by('-usage_count'),
+        'dairy': Ingredient.objects.filter(
+            name__in=['牛奶', '起司', '奶油', '優格', '鮮奶油']
+        ).annotate(usage_count=Count('menu_items')).order_by('-usage_count')
+    }
+    
+    # 營養密度高的食材
+    nutritious_ingredients = [
+        {
+            'name': '菠菜',
+            'benefits': '富含鐵質、維生素K、葉酸',
+            'calories_per_100g': 23,
+            'protein_per_100g': 2.9,
+            'health_benefits': '改善貧血、強化骨骼、促進心血管健康'
+        },
+        {
+            'name': '鮭魚',
+            'benefits': '富含Omega-3脂肪酸、優質蛋白質',
+            'calories_per_100g': 208,
+            'protein_per_100g': 25.4,
+            'health_benefits': '降低心臟病風險、改善腦部功能、抗發炎'
+        },
+        {
+            'name': '藜麥',
+            'benefits': '完整蛋白質、高纖維、無麩質',
+            'calories_per_100g': 368,
+            'protein_per_100g': 14.1,
+            'health_benefits': '穩定血糖、促進消化、提供持久能量'
+        },
+        {
+            'name': '酪梨',
+            'benefits': '健康脂肪、維生素E、鉀',
+            'calories_per_100g': 160,
+            'protein_per_100g': 2.0,
+            'health_benefits': '降低膽固醇、保護心臟、促進營養吸收'
+        }
+    ]
+    
+    # 食材使用趨勢
+    ingredient_trends = {
+        'rising': ['藜麥', '酪梨', '羽衣甘藍', '奇亞籽', '椰子油'],
+        'stable': ['雞肉', '米飯', '番茄', '洋蔥', '蛋'],
+        'declining': ['豬油', '白糖', '精製麵粉', '人工添加劑']
+    }
     
     return render(request, 'food_analysis/ingredient_analysis.html', {
         'ingredients_with_details': ingredients_with_details,
+        'ingredient_categories': ingredient_categories,
+        'nutritious_ingredients': nutritious_ingredients,
+        'ingredient_trends': ingredient_trends,
     })
 
 def ai_nutrition_advisor(request):
@@ -379,3 +590,166 @@ def analyze_food(food_description):
             ],
             'ai_raw_response': str(e)
         }
+
+@login_required
+def personal_food_diary(request):
+    """個人飲食日記 - 記錄和查看個人飲食"""
+    if request.method == 'POST':
+        form = PersonalFoodRecordForm(request.POST)
+        if form.is_valid():
+            food_record = form.save(commit=False)
+            food_record.user = request.user
+            
+            # 使用 AI 分析食物
+            analysis_result = analyze_food(food_record.food_description)
+            
+            # 保存 AI 分析結果
+            food_record.calories = analysis_result.get('calories', 0)
+            food_record.protein = analysis_result.get('protein', 0)
+            food_record.carbs = analysis_result.get('carbs', 0)
+            food_record.fat = analysis_result.get('fat', 0)
+            food_record.fiber = analysis_result.get('fiber', 0)
+            food_record.sugar = analysis_result.get('sugar', 0)
+            food_record.sodium = analysis_result.get('sodium', 0)
+            food_record.nutritional_analysis = analysis_result.get('nutritional_value', '')
+            food_record.health_impact = analysis_result.get('health_impact', '')
+            food_record.improvement_suggestions = analysis_result.get('improvement_suggestions', [])
+            
+            food_record.save()
+            
+            # 更新當日營養總結
+            update_daily_nutrition_summary(request.user, food_record.date_consumed)
+            
+            messages.success(request, f'成功記錄您的{food_record.get_meal_type_display()}！AI 已完成營養分析。')
+            return redirect('personal_food_diary')
+    else:
+        form = PersonalFoodRecordForm()
+    
+    # 獲取用戶最近的飲食記錄
+    recent_records = PersonalFoodRecord.objects.filter(user=request.user)[:10]
+    
+    # 獲取今日營養總結
+    today = timezone.now().date()
+    today_summary, created = PersonalNutritionSummary.objects.get_or_create(
+        user=request.user,
+        date=today,
+        defaults={
+            'total_calories': 0,
+            'total_protein': 0,
+            'total_carbs': 0,
+            'total_fat': 0,
+            'total_fiber': 0,
+            'total_sugar': 0,
+            'total_sodium': 0,
+            'meal_count': 0
+        }
+    )
+    
+    # 獲取最近7天的營養趨勢
+    week_summaries = PersonalNutritionSummary.objects.filter(
+        user=request.user,
+        date__gte=today - timedelta(days=6)
+    ).order_by('date')
+    
+    return render(request, 'food_analysis/personal_diary.html', {
+        'form': form,
+        'recent_records': recent_records,
+        'today_summary': today_summary,
+        'week_summaries': week_summaries,
+    })
+
+def update_daily_nutrition_summary(user, date):
+    """更新用戶當日營養總結"""
+    daily_records = PersonalFoodRecord.objects.filter(
+        user=user,
+        date_consumed=date
+    )
+    
+    # 計算當日總營養
+    totals = daily_records.aggregate(
+        total_calories=Sum('calories'),
+        total_protein=Sum('protein'),
+        total_carbs=Sum('carbs'),
+        total_fat=Sum('fat'),
+        total_fiber=Sum('fiber'),
+        total_sugar=Sum('sugar'),
+        total_sodium=Sum('sodium'),
+        meal_count=Count('id')
+    )
+    
+    # 更新或創建營養總結
+    summary, created = PersonalNutritionSummary.objects.update_or_create(
+        user=user,
+        date=date,
+        defaults={
+            'total_calories': totals['total_calories'] or 0,
+            'total_protein': totals['total_protein'] or 0,
+            'total_carbs': totals['total_carbs'] or 0,
+            'total_fat': totals['total_fat'] or 0,
+            'total_fiber': totals['total_fiber'] or 0,
+            'total_sugar': totals['total_sugar'] or 0,
+            'total_sodium': totals['total_sodium'] or 0,
+            'meal_count': totals['meal_count'] or 0
+        }
+    )
+
+@login_required
+def personal_nutrition_dashboard(request):
+    """個人營養儀表板 - 基於用戶的飲食記錄"""
+    user = request.user
+    today = timezone.now().date()
+    
+    # 獲取今日營養總結
+    today_summary = PersonalNutritionSummary.objects.filter(
+        user=user, date=today
+    ).first()
+    
+    # 獲取最近7天的營養數據
+    week_summaries = PersonalNutritionSummary.objects.filter(
+        user=user,
+        date__gte=today - timedelta(days=6)
+    ).order_by('date')
+    
+    # 獲取最近的飲食記錄
+    recent_records = PersonalFoodRecord.objects.filter(user=user)[:5]
+    
+    # 計算平均營養攝入
+    avg_nutrition = PersonalNutritionSummary.objects.filter(
+        user=user,
+        date__gte=today - timedelta(days=30)
+    ).aggregate(
+        avg_calories=Avg('total_calories'),
+        avg_protein=Avg('total_protein'),
+        avg_carbs=Avg('total_carbs'),
+        avg_fat=Avg('total_fat')
+    )
+    
+    # 每日營養建議值
+    daily_recommendations = {
+        'calories': 2000,
+        'protein': 50,
+        'carbs': 300,
+        'fat': 65,
+        'fiber': 25,
+        'sugar': 50,
+        'sodium': 2300
+    }
+    
+    # 計算達成率
+    achievement_rates = {}
+    if today_summary:
+        achievement_rates = {
+            'calories': min((today_summary.total_calories / daily_recommendations['calories']) * 100, 100),
+            'protein': min((today_summary.total_protein / daily_recommendations['protein']) * 100, 100),
+            'carbs': min((today_summary.total_carbs / daily_recommendations['carbs']) * 100, 100),
+            'fat': min((today_summary.total_fat / daily_recommendations['fat']) * 100, 100),
+        }
+    
+    return render(request, 'food_analysis/personal_dashboard.html', {
+        'today_summary': today_summary,
+        'week_summaries': week_summaries,
+        'recent_records': recent_records,
+        'avg_nutrition': avg_nutrition,
+        'daily_recommendations': daily_recommendations,
+        'achievement_rates': achievement_rates,
+    })

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Ingredient
+from .models import Ingredient, PersonalFoodRecord
 
 # class UserFoodRecordForm(forms.ModelForm):
 #     class Meta:
@@ -26,9 +26,36 @@ class UserFoodIngredientForm(forms.ModelForm):
 
 class FoodAnalysisForm(forms.Form):
     food_description = forms.CharField(
-        widget=forms.Textarea(attrs={'rows': 3, 'placeholder': '請描述您所吃的食物，例如：一碗牛肉麵、一份炒飯和一杯奶茶'}),
-        label='食物描述'
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 4,
+            'placeholder': '請描述您想分析的食物，例如：一碗牛肉麵加滷蛋、麥當勞大麥克套餐...'
+        }),
+        label='食物描述',
+        help_text='請詳細描述食物內容，AI 會根據您的描述進行營養分析'
     )
+
+class PersonalFoodRecordForm(forms.ModelForm):
+    class Meta:
+        model = PersonalFoodRecord
+        fields = ['food_description', 'meal_type']
+        widgets = {
+            'food_description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': '請描述您吃的食物，例如：一碗牛肉麵加滷蛋、星巴克拿鐵配可頌...'
+            }),
+            'meal_type': forms.Select(attrs={
+                'class': 'form-select'
+            })
+        }
+        labels = {
+            'food_description': '我吃了什麼',
+            'meal_type': '餐次'
+        }
+        help_texts = {
+            'food_description': '請詳細描述食物內容，AI 會自動分析營養成分'
+        }
 
 # class SaveAnalysisToRecordForm(forms.ModelForm):
 #     class Meta:

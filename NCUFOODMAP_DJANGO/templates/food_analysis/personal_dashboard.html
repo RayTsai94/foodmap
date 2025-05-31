@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}個人營養分析 - NCU 食物地圖{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4"><i class="fas fa-chart-line me-2"></i>個人營養分析</h1>
+            <p class="lead mb-5">基於您的飲食記錄，分析營養攝取狀況和健康趨勢</p>
+        </div>
+    </div>
+
+    <!-- 今日營養達成率 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-target me-2"></i>今日營養達成率</h4>
+                </div>
+                <div class="card-body">
+                    {% if today_summary %}
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <h5>熱量</h5>
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div class="progress-bar bg-primary" style="width: {{ achievement_rates.calories|default:0 }}%"></div>
+                                </div>
+                                <p class="mb-0">{{ today_summary.total_calories }} / {{ daily_recommendations.calories }} 卡</p>
+                                <small class="text-muted">{{ achievement_rates.calories|floatformat:1|default:0 }}% 達成</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <h5>蛋白質</h5>
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div class="progress-bar bg-info" style="width: {{ achievement_rates.protein|default:0 }}%"></div>
+                                </div>
+                                <p class="mb-0">{{ today_summary.total_protein|floatformat:1 }} / {{ daily_recommendations.protein }}g</p>
+                                <small class="text-muted">{{ achievement_rates.protein|floatformat:1|default:0 }}% 達成</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <h5>碳水化合物</h5>
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div class="progress-bar bg-warning" style="width: {{ achievement_rates.carbs|default:0 }}%"></div>
+                                </div>
+                                <p class="mb-0">{{ today_summary.total_carbs|floatformat:1 }} / {{ daily_recommendations.carbs }}g</p>
+                                <small class="text-muted">{{ achievement_rates.carbs|floatformat:1|default:0 }}% 達成</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="text-center">
+                                <h5>脂肪</h5>
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div class="progress-bar bg-danger" style="width: {{ achievement_rates.fat|default:0 }}%"></div>
+                                </div>
+                                <p class="mb-0">{{ today_summary.total_fat|floatformat:1 }} / {{ daily_recommendations.fat }}g</p>
+                                <small class="text-muted">{{ achievement_rates.fat|floatformat:1|default:0 }}% 達成</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-calendar-plus fa-3x mb-3"></i>
+                        <p>今天還沒有飲食記錄</p>
+                        <a href="{% url 'personal_food_diary' %}" class="btn btn-primary">開始記錄飲食</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 左側：營養趨勢圖表 -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-chart-area me-2"></i>最近7天營養趨勢</h4>
+                </div>
+                <div class="card-body">
+                    {% if week_summaries %}
+                    <div class="chart-container" style="position: relative; height: 400px;">
+                        <canvas id="nutritionTrendChart"></canvas>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-chart-line fa-3x mb-3"></i>
+                        <p>需要更多飲食記錄才能顯示趨勢圖</p>
+                        <p class="small">請持續記錄您的飲食，建立健康的飲食習慣</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 平均營養攝取 -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0"><i class="fas fa-calculator me-2"></i>最近30天平均營養攝取</h4>
+                </div>
+                <div class="card-body">
+                    {% if avg_nutrition.avg_calories %}
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-box text-center">
+                                <h4 class="text-primary">{{ avg_nutrition.avg_calories|floatformat:0 }}</h4>
+                                <p class="mb-0">平均熱量 (卡)</p>
+                                <small class="text-muted">建議: {{ daily_recommendations.calories }} 卡</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-box text-center">
+                                <h4 class="text-info">{{ avg_nutrition.avg_protein|floatformat:1 }}g</h4>
+                                <p class="mb-0">平均蛋白質</p>
+                                <small class="text-muted">建議: {{ daily_recommendations.protein }}g</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-box text-center">
+                                <h4 class="text-warning">{{ avg_nutrition.avg_carbs|floatformat:1 }}g</h4>
+                                <p class="mb-0">平均碳水化合物</p>
+                                <small class="text-muted">建議: {{ daily_recommendations.carbs }}g</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-box text-center">
+                                <h4 class="text-danger">{{ avg_nutrition.avg_fat|floatformat:1 }}g</h4>
+                                <p class="mb-0">平均脂肪</p>
+                                <small class="text-muted">建議: {{ daily_recommendations.fat }}g</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted">
+                        <p>需要更多飲食記錄才能計算平均值</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：最近飲食記錄和建議 -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-white">
+                    <h4 class="mb-0"><i class="fas fa-history me-2"></i>最近飲食</h4>
+                </div>
+                <div class="card-body">
+                    {% if recent_records %}
+                        {% for record in recent_records %}
+                        <div class="border-bottom pb-2 mb-2">
+                            <h6 class="mb-1">
+                                <span class="badge bg-secondary me-1">{{ record.get_meal_type_display }}</span>
+                                {{ record.date_consumed }}
+                            </h6>
+                            <p class="small mb-1">{{ record.food_description|truncatewords:10 }}</p>
+                            {% if record.calories %}
+                            <div class="d-flex justify-content-between small text-muted">
+                                <span>{{ record.calories }} 卡</span>
+                                <span>蛋白質 {{ record.protein|floatformat:1 }}g</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        <div class="text-center mt-3">
+                            <a href="{% url 'personal_food_diary' %}" class="btn btn-outline-warning btn-sm">查看完整記錄</a>
+                        </div>
+                    {% else %}
+                    <div class="text-center text-muted">
+                        <p>還沒有飲食記錄</p>
+                        <a href="{% url 'personal_food_diary' %}" class="btn btn-warning btn-sm">開始記錄</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 健康建議 -->
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0"><i class="fas fa-lightbulb me-2"></i>個人化建議</h4>
+                </div>
+                <div class="card-body">
+                    {% if today_summary %}
+                    <div class="mb-3">
+                        <h6><i class="fas fa-check-circle text-success me-2"></i>今日表現</h6>
+                        {% if today_summary.total_calories < 1500 %}
+                        <p class="small text-warning">熱量攝取偏低，建議增加健康的食物攝取。</p>
+                        {% elif today_summary.total_calories > 2500 %}
+                        <p class="small text-danger">熱量攝取偏高，建議控制份量或選擇低熱量食物。</p>
+                        {% else %}
+                        <p class="small text-success">熱量攝取適中，保持良好的飲食習慣！</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <h6><i class="fas fa-apple-alt text-primary me-2"></i>營養建議</h6>
+                        <ul class="small mb-0">
+                            <li>每天至少攝取5份蔬果</li>
+                            <li>選擇優質蛋白質來源</li>
+                            <li>限制加工食品和添加糖</li>
+                            <li>保持充足的水分攝取</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="text-center">
+                        <a href="{% url 'ai_advisor' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-robot me-1"></i>AI 營養顧問
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if week_summaries %}
+        // 營養趨勢圖表
+        const trendCtx = document.getElementById('nutritionTrendChart').getContext('2d');
+        const trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: [
+                    {% for summary in week_summaries %}
+                        '{{ summary.date|date:"m/d" }}'{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                datasets: [{
+                    label: '熱量',
+                    data: [
+                        {% for summary in week_summaries %}
+                            {{ summary.total_calories }}{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    ],
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: '蛋白質 (x10)',
+                    data: [
+                        {% for summary in week_summaries %}
+                            {{ summary.total_protein|floatformat:1 }}{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    ],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                }
+            }
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %} 

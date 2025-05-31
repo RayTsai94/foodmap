@@ -12,28 +12,48 @@
     <div class="analysis-card mb-5">
         <h2 class="mb-4">平均營養成分</h2>
         <div class="row">
-            <div class="col-md-3">
+            <div class="col-md-3 col-6 mb-3">
                 <div class="stat-box">
                     <h3>{{ avg_nutrition.avg_calories|floatformat:0|default:"--" }}</h3>
                     <p>平均熱量 (卡路里)</p>
+                    <small class="text-muted">建議: {{ daily_recommendations.calories }} 卡/日</small>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 col-6 mb-3">
                 <div class="stat-box">
                     <h3>{{ avg_nutrition.avg_protein|floatformat:1|default:"--" }}g</h3>
                     <p>平均蛋白質</p>
+                    <small class="text-muted">建議: {{ daily_recommendations.protein }}g/日</small>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 col-6 mb-3">
                 <div class="stat-box">
                     <h3>{{ avg_nutrition.avg_carbs|floatformat:1|default:"--" }}g</h3>
                     <p>平均碳水化合物</p>
+                    <small class="text-muted">建議: {{ daily_recommendations.carbs }}g/日</small>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 col-6 mb-3">
                 <div class="stat-box">
                     <h3>{{ avg_nutrition.avg_fat|floatformat:1|default:"--" }}g</h3>
                     <p>平均脂肪</p>
+                    <small class="text-muted">建議: {{ daily_recommendations.fat }}g/日</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 營養分布圖表 -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h4 class="mb-3">熱量分布</h4>
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="calorieDistributionChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h4 class="mb-3">營養成分比例</h4>
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="nutritionPieChart"></canvas>
                 </div>
             </div>
         </div>
@@ -44,25 +64,24 @@
         <h2 class="mb-4">低熱量健康選擇</h2>
         <div class="row">
             {% for item in healthy_choices %}
-                <div class="col-md-4 mb-4">
+                <div class="col-md-4 col-lg-2 mb-4">
                     <div class="card h-100">
                         {% if item.image %}
-                            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}">
+                            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}" style="height: 120px; object-fit: cover;">
                         {% else %}
-                            <img src="{% static 'img/default-food.jpg' %}" class="card-img-top" alt="{{ item.name }}">
+                            <img src="{% static 'img/default-food.jpg' %}" class="card-img-top" alt="{{ item.name }}" style="height: 120px; object-fit: cover;">
                         {% endif %}
-                        <div class="card-body">
-                            <h5 class="card-title">{{ item.name }}</h5>
-                            <p class="card-text text-muted">{{ item.restaurant.name }}</p>
+                        <div class="card-body p-2">
+                            <h6 class="card-title">{{ item.name }}</h6>
+                            <p class="card-text text-muted small">{{ item.restaurant.name }}</p>
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="badge bg-success">{{ item.nutrition.calories }} 卡路里</span>
-                                <a href="{% url 'menu_item_detail' item.pk %}" class="btn btn-sm btn-primary">查看詳情</a>
+                                <span class="badge bg-success small">{{ item.nutrition.calories }} 卡</span>
+                                <a href="{% url 'menu_item_detail' item.pk %}" class="btn btn-sm btn-primary">詳情</a>
                             </div>
-                            <div class="mt-3">
+                            <div class="mt-2">
                                 <div class="d-flex justify-content-between small">
                                     <span>蛋白質: {{ item.nutrition.protein }}g</span>
                                     <span>脂肪: {{ item.nutrition.fat }}g</span>
-                                    <span>碳水: {{ item.nutrition.carbs }}g</span>
                                 </div>
                             </div>
                         </div>
@@ -78,6 +97,44 @@
         </div>
     </div>
     
+    <!-- 高蛋白選擇區域 -->
+    <div class="analysis-card mb-5">
+        <h2 class="mb-4">高蛋白選擇</h2>
+        <div class="row">
+            {% for item in high_protein_choices %}
+                <div class="col-md-4 col-lg-2 mb-4">
+                    <div class="card h-100">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}" style="height: 120px; object-fit: cover;">
+                        {% else %}
+                            <img src="{% static 'img/default-food.jpg' %}" class="card-img-top" alt="{{ item.name }}" style="height: 120px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body p-2">
+                            <h6 class="card-title">{{ item.name }}</h6>
+                            <p class="card-text text-muted small">{{ item.restaurant.name }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-info small">{{ item.nutrition.protein }}g 蛋白質</span>
+                                <a href="{% url 'menu_item_detail' item.pk %}" class="btn btn-sm btn-primary">詳情</a>
+                            </div>
+                            <div class="mt-2">
+                                <div class="d-flex justify-content-between small">
+                                    <span>熱量: {{ item.nutrition.calories }} 卡</span>
+                                    <span>脂肪: {{ item.nutrition.fat }}g</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        尚未添加高蛋白菜單項目。
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
     <!-- 餐廳營養比較區域 -->
     <div class="analysis-card">
         <h2 class="mb-4">餐廳營養比較</h2>
@@ -87,6 +144,7 @@
                     <tr>
                         <th>餐廳</th>
                         <th>平均熱量</th>
+                        <th>平均蛋白質</th>
                         <th>菜單項數量</th>
                         <th>健康程度</th>
                         <th>操作</th>
@@ -96,19 +154,20 @@
                     {% for restaurant in restaurant_nutrition %}
                         <tr>
                             <td>{{ restaurant.name }}</td>
-                            <td>{{ restaurant.avg_calories|floatformat:0 }} 卡路里</td>
-                            <td>{{ restaurant.menu_items.count }}</td>
+                            <td>{{ restaurant.avg_calories|floatformat:0 }} 卡</td>
+                            <td>{{ restaurant.avg_protein|floatformat:1 }}g</td>
+                            <td>{{ restaurant.menu_count }}</td>
                             <td>
                                 <div class="progress" style="height: 8px;">
-                                    {% with health_score=restaurant.avg_calories|floatformat:0|default:"0"|divisibleby:20 %}
-                                        {% if health_score < 30 %}
-                                            <div class="progress-bar bg-success" style="width: {{ 100|add:"-" }}{{ health_score }}%"></div>
-                                        {% elif health_score < 50 %}
-                                            <div class="progress-bar bg-info" style="width: {{ 100|add:"-" }}{{ health_score }}%"></div>
-                                        {% elif health_score < 70 %}
-                                            <div class="progress-bar bg-warning" style="width: {{ 100|add:"-" }}{{ health_score }}%"></div>
+                                    {% with health_score=restaurant.avg_calories|floatformat:0|default:"0" %}
+                                        {% if health_score < 400 %}
+                                            <div class="progress-bar bg-success" style="width: 80%"></div>
+                                        {% elif health_score < 600 %}
+                                            <div class="progress-bar bg-info" style="width: 60%"></div>
+                                        {% elif health_score < 800 %}
+                                            <div class="progress-bar bg-warning" style="width: 40%"></div>
                                         {% else %}
-                                            <div class="progress-bar bg-danger" style="width: {{ 100|add:"-" }}{{ health_score }}%"></div>
+                                            <div class="progress-bar bg-danger" style="width: 20%"></div>
                                         {% endif %}
                                     {% endwith %}
                                 </div>
@@ -119,7 +178,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="5" class="text-center">尚無餐廳營養數據。</td>
+                            <td colspan="6" class="text-center">尚無餐廳營養數據。</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -161,4 +220,83 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 熱量分布圖表
+        const calorieCtx = document.getElementById('calorieDistributionChart').getContext('2d');
+        const calorieChart = new Chart(calorieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['低熱量 (<300卡)', '中等熱量 (300-600卡)', '高熱量 (>600卡)'],
+                datasets: [{
+                    data: [
+                        {{ nutrition_stats.low_calorie_count }},
+                        {{ nutrition_stats.medium_calorie_count }},
+                        {{ nutrition_stats.high_calorie_count }}
+                    ],
+                    backgroundColor: [
+                        'rgba(39, 174, 96, 0.8)',
+                        'rgba(241, 196, 15, 0.8)',
+                        'rgba(231, 76, 60, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(39, 174, 96, 1)',
+                        'rgba(241, 196, 15, 1)',
+                        'rgba(231, 76, 60, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // 營養成分比例圖表
+        const nutritionCtx = document.getElementById('nutritionPieChart').getContext('2d');
+        const nutritionChart = new Chart(nutritionCtx, {
+            type: 'pie',
+            data: {
+                labels: ['蛋白質', '碳水化合物', '脂肪'],
+                datasets: [{
+                    data: [
+                        {{ avg_nutrition.avg_protein|default:0 }},
+                        {{ avg_nutrition.avg_carbs|default:0 }},
+                        {{ avg_nutrition.avg_fat|default:0 }}
+                    ],
+                    backgroundColor: [
+                        'rgba(52, 152, 219, 0.8)',
+                        'rgba(155, 89, 182, 0.8)',
+                        'rgba(230, 126, 34, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(52, 152, 219, 1)',
+                        'rgba(155, 89, 182, 1)',
+                        'rgba(230, 126, 34, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %} 
