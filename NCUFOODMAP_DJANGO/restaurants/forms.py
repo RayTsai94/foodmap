@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Count
 from .models import Review, Category
 
 class ReviewForm(forms.ModelForm):
@@ -22,7 +23,9 @@ class ReviewForm(forms.ModelForm):
 class RestaurantFilterForm(forms.Form):
     """用於過濾餐廳列表的表單"""
     category = forms.ModelChoiceField(
-        queryset=Category.objects.all(),
+        queryset=Category.objects.annotate(
+            restaurant_count=Count('restaurants')
+        ).filter(restaurant_count__gt=0),
         required=False,
         empty_label="所有分類",
         label="分類",

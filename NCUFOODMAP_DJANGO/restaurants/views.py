@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.db.models import Avg, Q
+from django.db.models import Avg, Q, Count
 from django.core.paginator import Paginator
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -18,8 +18,10 @@ def home(request):
         avg_rating=Avg('reviews__rating')
     ).order_by('-avg_rating')[:5]
     
-    # 獲取所有分類
-    categories = Category.objects.all()
+    # 獲取有餐廳的分類
+    categories = Category.objects.annotate(
+        restaurant_count=Count('restaurants')
+    ).filter(restaurant_count__gt=0)
     
     return render(request, 'restaurants/home.html', {
         'top_restaurants': top_restaurants,
