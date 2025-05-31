@@ -620,5 +620,23 @@ function hideSuggestions() {
     document.getElementById('search-suggestions').style.display = 'none';
     currentSuggestionIndex = -1;
 }
+
+// Google Maps API 錯誤處理
+window.gm_authFailure = function() {
+    console.error("Google Maps API 認證失敗");
+    document.getElementById("restaurant-map").innerHTML = 
+        '<div class="alert alert-warning text-center">地圖載入失敗，請檢查API金鑰設定</div>';
+};
+
+// 檢查Google Maps API是否載入
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        if (typeof google === 'undefined') {
+            console.error("Google Maps API 未載入");
+            document.getElementById("restaurant-map").innerHTML = 
+                '<div class="alert alert-warning text-center">Google Maps API 載入失敗，請重新整理頁面</div>';
+        }
+    }, 5000);
+});
 </script>
 {% endblock %} 

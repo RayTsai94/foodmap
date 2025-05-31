@@ -164,121 +164,199 @@
 <section class="mb-5">
     <h2 class="text-center mb-4">打卡足跡檢索</h2>
     <div id="mainMap"></div>
+    <div id="map-status" class="text-center mt-2" style="display: none;">
+        <div class="alert alert-info">正在載入地圖...</div>
+    </div>
 </section>
 
-<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap" async defer></script>
 <script>
+// 顯示載入狀態
+document.getElementById('map-status').style.display = 'block';
+
 function initMap() {
-  const map = new google.maps.Map(document.getElementById("mainMap"), {
-    center: { lat: 24.968, lng: 121.193 },
-    zoom: 16,
-    styles: [
-      {
-        featureType: "poi",
-        elementType: "labels",
-        stylers: [{ visibility: "off" }]
-      }
-    ]
-  });
+  console.log("開始初始化地圖...");
+  
+  try {
+    const map = new google.maps.Map(document.getElementById("mainMap"), {
+      center: { lat: 24.968, lng: 121.193 },
+      zoom: 16,
+      styles: [
+        {
+          featureType: "poi",
+          elementType: "labels",
+          stylers: [{ visibility: "off" }]
+        }
+      ]
+    });
 
-  // 處理重疊標記的函數
-  function adjustOverlappingMarkers(markers) {
-    const locationMap = new Map(); // 用來存儲每個位置的標記數量
+    console.log("地圖創建成功");
     
-    markers.forEach(marker => {
-      const key = `${marker.getPosition().lat()},${marker.getPosition().lng()}`;
-      if (!locationMap.has(key)) {
-        locationMap.set(key, []);
-      }
-      locationMap.get(key).push(marker);
-    });
+    // 隱藏載入狀態
+    document.getElementById('map-status').style.display = 'none';
 
-    // 對於每個有多個標記的位置，進行偏移
-    locationMap.forEach(markersAtLocation => {
-      if (markersAtLocation.length > 1) {
-        const radius = 0.00001; // 大約15米的偏移
-        markersAtLocation.forEach((marker, index) => {
-          if (index > 0) { // 第一個標記保持原位
-            const angle = (2 * Math.PI * index) / markersAtLocation.length;
-            const newLat = marker.getPosition().lat() + radius * Math.cos(angle);
-            const newLng = marker.getPosition().lng() + radius * Math.sin(angle);
-            marker.setPosition(new google.maps.LatLng(newLat, newLng));
+    // 處理重疊標記的函數
+    function adjustOverlappingMarkers(markers) {
+      const locationMap = new Map();
+      
+      markers.forEach(marker => {
+        const key = `${marker.getPosition().lat()},${marker.getPosition().lng()}`;
+        if (!locationMap.has(key)) {
+          locationMap.set(key, []);
+        }
+        locationMap.get(key).push(marker);
+      });
+
+      locationMap.forEach(markersAtLocation => {
+        if (markersAtLocation.length > 1) {
+          const radius = 0.0001; // 增加偏移距離
+          markersAtLocation.forEach((marker, index) => {
+            if (index > 0) {
+              const angle = (2 * Math.PI * index) / markersAtLocation.length;
+              const newLat = marker.getPosition().lat() + radius * Math.cos(angle);
+              const newLng = marker.getPosition().lng() + radius * Math.sin(angle);
+              marker.setPosition(new google.maps.LatLng(newLat, newLng));
+            }
+          });
+        }
+      });
+    }
+
+    // 抓取打卡資料並加上 Marker
+    console.log("開始載入打卡數據...");
+    fetch('/checkin/json')
+      .then(response => {
+        console.log("API回應狀態:", response.status);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log("收到打卡數據:", data.length, "筆記錄");
+        
+        if (!Array.isArray(data)) {
+          console.error("API返回的數據格式不正確:", data);
+          return;
+        }
+        
+        const infoWindow = new google.maps.InfoWindow();
+        const markers = [];
+        
+        data.forEach(checkin => {
+          // 驗證數據完整性
+          if (!checkin.latitude || !checkin.longitude) {
+            console.warn("跳過無效的打卡數據:", checkin);
+            return;
           }
-        });
-      }
-    });
-  }
-
-  // 抓取打卡資料並加上 Marker
-  fetch('/checkin/json')
-    .then(response => response.json())
-    .then(data => {
-      const infoWindow = new google.maps.InfoWindow();  // 共用一個 InfoWindow
-      const markers = data.map(checkin => {
-        // 根據是否為當前用戶選擇不同的圖標
-        const iconUrl = checkin.is_current_user 
-          ? "{% static 'images/logo.png' %}"  // 自己的打卡使用特別圖標
-          : "{% static 'images/logo2.png' %}"; // 其他用戶的打卡使用雞蛋圖標
-
-        const marker = new google.maps.Marker({
-          position: {
-            lat: parseFloat(checkin.latitude),
-            lng: parseFloat(checkin.longitude),
-          },
-          map: map,
-          title: checkin.restaurant_name,
-          icon: {
-            url: iconUrl,
-            scaledSize: new google.maps.Size(50, 50),
-          }
-        });
-
-        // 點擊 Marker 顯示資訊視窗
-        marker.addListener("click", () => {
-          // 創建評分星星
-          const stars = '★'.repeat(Math.floor(checkin.rating)) + '☆'.repeat(5 - Math.floor(checkin.rating));
           
-          const content = `
-            <div class="map-info-window" style="padding: 15px; max-width: 300px;">
-              <h5 style="margin: 0 0 10px 0; color: #333;">${checkin.restaurant_name}</h5>
-              <div style="margin-bottom: 8px;">
-                <span style="color: #666;">
-                  <i class="fas fa-user"></i> ${checkin.is_current_user ? '我' : checkin.user_name}
-                </span>
-                <span style="margin-left: 10px; color: #666;">
-                  <i class="fas fa-calendar"></i> ${checkin.date}
-                </span>
-              </div>
-              <div style="margin-bottom: 8px; color: #ff9800;">
-                ${stars} ${checkin.rating.toFixed(1)}
-              </div>
-              <div style="margin-bottom: 8px;">
-                <strong style="color: #4CAF50;">$ ${checkin.price}</strong>
-                <span style="margin-left: 10px;">${checkin.item}</span>
-              </div>
-              <p style="margin: 0; color: #666; font-style: italic;">
-                "${checkin.comment}"
-              </p>
-            </div>`;
+          // 根據是否為當前用戶選擇不同的圖標
+          const iconUrl = checkin.is_current_user 
+            ? "{% static 'images/logo.png' %}"
+            : "{% static 'images/logo2.png' %}";
+
+          const marker = new google.maps.Marker({
+            position: {
+              lat: parseFloat(checkin.latitude),
+              lng: parseFloat(checkin.longitude),
+            },
+            map: map,
+            title: checkin.restaurant_name || '未知餐廳',
+            icon: {
+              url: iconUrl,
+              scaledSize: new google.maps.Size(40, 40), // 稍微縮小圖標
+            }
+          });
+
+          // 點擊 Marker 顯示資訊視窗
+          marker.addListener("click", () => {
+            const rating = parseFloat(checkin.rating) || 0;
+            const stars = '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
             
-          infoWindow.setContent(content);
-          infoWindow.open(map, marker);
+            const content = `
+              <div class="map-info-window" style="padding: 15px; max-width: 300px;">
+                <h5 style="margin: 0 0 10px 0; color: #333;">${checkin.restaurant_name || '未知餐廳'}</h5>
+                <div style="margin-bottom: 8px;">
+                  <span style="color: #666;">
+                    <i class="fas fa-user"></i> ${checkin.is_current_user ? '我' : (checkin.user_name || '匿名用戶')}
+                  </span>
+                  <span style="margin-left: 10px; color: #666;">
+                    <i class="fas fa-calendar"></i> ${checkin.date || '未知日期'}
+                  </span>
+                </div>
+                <div style="margin-bottom: 8px; color: #ff9800;">
+                  ${stars} ${rating.toFixed(1)}
+                </div>
+                <div style="margin-bottom: 8px;">
+                  <strong style="color: #4CAF50;">$ ${checkin.price || '未知價格'}</strong>
+                  <span style="margin-left: 10px;">${checkin.item || '未知項目'}</span>
+                </div>
+                <p style="margin: 0; color: #666; font-style: italic;">
+                  "${checkin.comment || '無評論'}"
+                </p>
+              </div>`;
+              
+            infoWindow.setContent(content);
+            infoWindow.open(map, marker);
+          });
+
+          markers.push(marker);
         });
 
-        return marker;
-      });
+        if (markers.length === 0) {
+          console.log("沒有有效的打卡數據可顯示");
+          // 顯示提示訊息
+          document.getElementById('map-status').innerHTML = '<div class="alert alert-info">目前沒有打卡記錄可顯示</div>';
+          document.getElementById('map-status').style.display = 'block';
+          return;
+        }
 
-      // 處理重疊的標記
-      adjustOverlappingMarkers(markers);
-
-      // 添加聚類功能
-      new MarkerClusterer(map, markers, {
-        imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'
+        console.log("成功創建", markers.length, "個標記");
+        
+        // 處理重疊的標記
+        adjustOverlappingMarkers(markers);
+        
+        // 調整地圖視野以包含所有標記
+        if (markers.length > 1) {
+          const bounds = new google.maps.LatLngBounds();
+          markers.forEach(marker => bounds.extend(marker.getPosition()));
+          map.fitBounds(bounds);
+        }
+      })
+      .catch(error => {
+        console.error("載入打卡資料失敗:", error);
+        document.getElementById('map-status').innerHTML = 
+          '<div class="alert alert-warning">載入打卡資料失敗，請重新整理頁面</div>';
+        document.getElementById('map-status').style.display = 'block';
       });
-    })
-    .catch(error => console.error("載入打卡資料失敗:", error));
+      
+  } catch (error) {
+    console.error("地圖初始化失敗:", error);
+    document.getElementById('map-status').innerHTML = 
+      '<div class="alert alert-danger">地圖初始化失敗</div>';
+    document.getElementById('map-status').style.display = 'block';
+  }
 }
+
+// 確保在Google Maps API載入失敗時有適當的錯誤處理
+window.gm_authFailure = function() {
+  console.error("Google Maps API 認證失敗");
+  document.getElementById("mainMap").innerHTML = 
+    '<div class="alert alert-warning text-center">地圖載入失敗，請檢查API金鑰設定</div>';
+  document.getElementById('map-status').style.display = 'none';
+};
+
+// 檢查Google Maps API是否載入
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    if (typeof google === 'undefined') {
+      console.error("Google Maps API 未載入");
+      document.getElementById('map-status').innerHTML = 
+        '<div class="alert alert-warning">Google Maps API 載入失敗</div>';
+    }
+  }, 5000);
+});
 </script>
 
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap" async defer></script>
 
 {% endblock %} 

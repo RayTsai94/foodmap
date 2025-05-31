@@ -26,6 +26,7 @@ def home(request):
     return render(request, 'restaurants/home.html', {
         'top_restaurants': top_restaurants,
         'categories': categories,
+        'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
     })
 
 def restaurant_list(request):
@@ -78,6 +79,7 @@ def restaurant_list(request):
         'page_obj': page_obj,
         'filter_form': filter_form,
         'restaurant_json': restaurant_json,
+        'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
     })
 
 def restaurant_detail(request, pk):
