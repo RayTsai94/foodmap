@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}創建群組聊天 - NCU 食物地圖{% endblock %}
+
+{% block extra_css %}
+<style>
+    .create-chat-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .friend-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+        transition: transform 0.2s;
+        cursor: pointer;
+    }
+    
+    .friend-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+    }
+    
+    .friend-card.selected {
+        border: 2px solid #007bff;
+        background-color: #f8f9ff;
+    }
+    
+    .friend-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .selected-count {
+        background: #007bff;
+        color: white;
+        border-radius: 50%;
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        min-width: 24px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- 頭部 -->
+            <div class="create-chat-header">
+                <div class="d-flex align-items-center">
+                    <a href="{% url 'social:chat_list' %}" class="btn btn-link text-white p-0 me-3">
+                        <i class="fas fa-arrow-left fa-lg"></i>
+                    </a>
+                    <div>
+                        <h2><i class="fas fa-users me-2"></i>創建群組聊天</h2>
+                        <p class="mb-0">選擇好友來創建群組聊天</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 創建表單 -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" id="createGroupForm">
+                        {% csrf_token %}
+                        
+                        <!-- 群組名稱 -->
+                        <div class="mb-4">
+                            <label for="groupName" class="form-label">
+                                <i class="fas fa-tag me-2"></i>群組名稱
+                            </label>
+                            <input type="text" class="form-control" id="groupName" name="name" 
+                                   placeholder="輸入群組聊天名稱" required>
+                        </div>
+                        
+                        <!-- 選擇好友 -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-user-friends me-2"></i>選擇參與者
+                                <span class="selected-count ms-2" id="selectedCount">0</span>
+                            </label>
+                            
+                            {% if friends %}
+                                <div class="row">
+                                    {% for friend in friends %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="friend-card" onclick="toggleFriend({{ friend.id }}, this)">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center">
+                                                    <input type="checkbox" name="participants" value="{{ friend.id }}" 
+                                                           class="form-check-input me-3" style="display: none;">
+                                                    
+                                                    {% if friend.social_profile.avatar %}
+                                                        <img src="{{ friend.social_profile.avatar.url }}" 
+                                                             alt="頭像" class="friend-avatar me-3">
+                                                    {% else %}
+                                                        <div class="friend-avatar me-3 bg-secondary d-flex align-items-center justify-content-center">
+                                                            <i class="fas fa-user text-white"></i>
+                                                        </div>
+                                                    {% endif %}
+                                                    
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="mb-0">{{ friend.username }}</h6>
+                                                        {% if friend.social_profile.bio %}
+                                                            <small class="text-muted">{{ friend.social_profile.bio|truncatechars:30 }}</small>
+                                                        {% endif %}
+                                                    </div>
+                                                    
+                                                    <div class="check-icon" style="display: none;">
+                                                        <i class="fas fa-check-circle text-primary fa-lg"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-user-friends fa-3x text-muted mb-3"></i>
+                                    <h5>還沒有好友</h5>
+                                    <p class="text-muted">先去添加一些好友，然後再創建群組聊天吧！</p>
+                                    <a href="{% url 'social:friends' %}" class="btn btn-primary">
+                                        <i class="fas fa-user-plus me-2"></i>添加好友
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- 提交按鈕 -->
+                        {% if friends %}
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="createBtn" disabled>
+                                <i class="fas fa-plus me-2"></i>創建群組聊天
+                            </button>
+                            <a href="{% url 'social:chat_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>取消
+                            </a>
+                        </div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedCount = 0;
+
+function toggleFriend(friendId, cardElement) {
+    const checkbox = cardElement.querySelector('input[type="checkbox"]');
+    const checkIcon = cardElement.querySelector('.check-icon');
+    const createBtn = document.getElementById('createBtn');
+    const countElement = document.getElementById('selectedCount');
+    
+    // 切換選中狀態
+    checkbox.checked = !checkbox.checked;
+    
+    if (checkbox.checked) {
+        cardElement.classList.add('selected');
+        checkIcon.style.display = 'block';
+        selectedCount++;
+    } else {
+        cardElement.classList.remove('selected');
+        checkIcon.style.display = 'none';
+        selectedCount--;
+    }
+    
+    // 更新計數器
+    countElement.textContent = selectedCount;
+    
+    // 更新創建按鈕狀態
+    const groupName = document.getElementById('groupName').value.trim();
+    createBtn.disabled = !(selectedCount > 0 && groupName);
+}
+
+// 監聽群組名稱輸入
+document.getElementById('groupName').addEventListener('input', function() {
+    const createBtn = document.getElementById('createBtn');
+    const groupName = this.value.trim();
+    createBtn.disabled = !(selectedCount > 0 && groupName);
+});
+
+// 表單提交驗證
+document.getElementById('createGroupForm').addEventListener('submit', function(e) {
+    const groupName = document.getElementById('groupName').value.trim();
+    const selectedFriends = document.querySelectorAll('input[name="participants"]:checked');
+    
+    if (!groupName) {
+        e.preventDefault();
+        alert('請輸入群組名稱');
+        return;
+    }
+    
+    if (selectedFriends.length === 0) {
+        e.preventDefault();
+        alert('請至少選擇一個參與者');
+        return;
+    }
+    
+    // 顯示載入狀態
+    const createBtn = document.getElementById('createBtn');
+    createBtn.disabled = true;
+    createBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>創建中...';
+});
+</script>
+{% endblock %} 

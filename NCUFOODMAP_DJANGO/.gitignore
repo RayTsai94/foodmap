@@ -28,7 +28,7 @@ db.sqlite3-journal
 media/
 
 # 環境變數
-.env
+!.env
 
 # IDE
 .idea/

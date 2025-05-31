@@ -255,22 +255,36 @@
 
 {% block extra_js %}
 <script>
+// 獲取 CSRF token 的通用函數
+function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
 function markAsRead(notificationId) {
+    const csrfToken = getCSRFToken();
+    
     $.ajax({
         url: '{% url "social:notifications" %}',
         type: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
         data: {
             'notification_id': notificationId,
-            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            'csrfmiddlewaretoken': csrfToken
         },
         success: function(data) {
             if (data.success) {
                 // 重新載入頁面以更新狀態
                 location.reload();
+            } else {
+                alert('標記失敗：' + (data.error || '未知錯誤'));
             }
         },
-        error: function() {
-            alert('標記失敗，請稍後再試。');
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', error);
+            console.error('Response:', xhr.responseText);
+            alert('標記失敗，請稍後再試。錯誤：' + error);
         }
     });
 }

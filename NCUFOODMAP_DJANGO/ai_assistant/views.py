@@ -12,95 +12,186 @@ from .models import ChatHistory
 logger = logging.getLogger(__name__)
 
 def get_ai_response(message, current_page):
-    """使用 Together API 獲取回應"""
+    """AI助手：網站導覽與功能介紹，遇到健康/營養/飲食/疾病問題時引導，其他問題呼叫Together AI生成說明。"""
     API_KEY = settings.TOGETHER_API_KEY
-    logger.info(f"Using API KEY: {API_KEY[:5]}...")  # 只記錄前5個字符
-    
-    # 根據當前頁面定制提示詞
-    page_contexts = {
-        'home': """這是首頁，展示熱門餐廳和分類。
-- 可以推薦最近好評的餐廳
-- 可以解釋分類系統
-- 可以指導如何使用搜尋功能
-- 可以介紹網站主要功能""",
+    logger.info(f"Using API KEY: {API_KEY[:5]}...")
 
-        'restaurant_list': """這是餐廳列表頁面。
-- 可以解釋篩選條件的使用方法
-- 可以說明排序選項的意義
-- 可以建議如何找到特定類型的餐廳
-- 可以解釋評分系統""",
+    # 健康/營養/飲食/疾病關鍵字
+    health_keywords = [
+        "減肥", "減重", "瘦身", "減脂", "體重", "蛋白質", "營養", "維生素", "礦物質", "膳食纖維", "碳水化合物", "脂肪", "熱量", "卡路里", "素食", "糖尿病", "高血壓", "高血脂", "心臟病", "腎臟病", "肝臟病", "痛風", "過敏", "飲食", "健康", "疾病", "飲食原則", "飲食建議", "健康建議"
+    ]
+    if any(keyword in message for keyword in health_keywords):
+        return "您好，若您有健康、營養、飲食或疾病相關的問題，建議您使用『智能營養顧問』功能，該功能可提供專業的營養諮詢與建議！本 AI 助手僅提供網站導覽與功能說明。"
 
-        'restaurant_detail': "這是餐廳詳情頁面，提供餐廳的詳細資訊，包括菜單、評價、營業時間、位置等資訊，您也可以在這裡收藏餐廳。",
-        'checkin': "這是打卡頁面，您可以記錄用餐體驗、上傳美食照片、分享心得，並查看其他人的打卡記錄。",
-        'article': "這是文章留言板，您可以分享美食體驗、撰寫食記、與其他用戶互動討論。",
-        'food_analysis': """這是食物分析頁面。
-- 可以解釋各營養成分的意義
-- 可以說明營養數據的來源
-- 可以解釋健康建議的依據
-- 必須提醒這是一般性建議，特殊情況需諮詢專業醫師
-- 可以解釋如何解讀分析圖表""",
-        'user_ranking': "這是用戶排行榜頁面，顯示活躍用戶、打卡王、評論達人等排名。",
-        'restaurant_ranking': "這是餐廳排行榜頁面，展示最受歡迎、評分最高、打卡最多的餐廳排名。",
-        'nutrition_dashboard': "這是營養儀表板頁面，提供個人飲食分析、營養攝入統計、飲食建議等資訊。",
-        'dietary_preferences': "這是飲食偏好設置頁面，您可以設定個人飲食習慣、過敏原、特殊飲食需求等。",
-        'allergen_info': "這是過敏原資訊頁面，提供食物過敏原查詢、安全飲食建議等資訊。",
-        'ingredient_analysis': "這是食材分析頁面，提供食材的營養成分、熱量、健康效益等詳細資訊。",
-        'ai_food_analysis': """這是AI食物分析頁面。
-- 可以指導如何詳細描述食物以獲得更準確的分析
-- 可以解釋營養成分的計算方式
-- 可以說明數據的可信度
-- 必須說明這是估算值，僅供參考
-- 可以建議如何使用分析結果改善飲食""",
-        'ai_advisor': """這是智能營養顧問頁面。
-- 可以根據用戶提供的資訊給出個人化建議
-- 必須說明建議的依據和限制
-- 可以解釋如何追蹤營養目標
-- 可以建議如何平衡營養攝入
-- 必須提醒特殊情況需要專業醫療建議""",
-        'user_profile': "這是個人資料頁面，您可以查看和編輯個人資訊、管理收藏的餐廳、查看活動歷史。",
-        'favorite_restaurants': "這是收藏餐廳頁面，顯示您收藏的所有餐廳清單。",
-        'user_checkins': "這是我的打卡頁面，記錄您的所有打卡歷史。",
-        'user_articles': "這是我的文章頁面，顯示您發表的所有文章和評論。",
-        'settings': "這是設定頁面，您可以調整帳號設定、隱私設定、通知偏好等。",
-        'delete_account': "這是刪除帳號頁面，您可以刪除您的帳號。"
+    # 詳細的頁面功能說明
+    page_details = {
+        "home": {
+            "name": "首頁",
+            "intro": "歡迎來到 NCU 食物地圖！這裡是您探索中央大學美食世界的起點。",
+            "features": [
+                "🏠 瀏覽網站主要功能概覽",
+                "🍽️ 快速進入餐廳地圖、營養分析等核心功能",
+                "📰 查看最新美食文章與校園飲食資訊",
+                "👥 訪問社交功能，與同學分享美食經驗",
+                "🎯 使用快速導航前往各個功能頁面"
+            ],
+            "how_to": "點擊導航欄或首頁卡片即可進入相應功能。建議先從地圖功能開始探索附近餐廳！"
+        },
+        "map": {
+            "name": "餐廳地圖",
+            "intro": "探索中央大學周邊的所有美食選擇！互動式地圖讓您輕鬆找到心儀的餐廳。",
+            "features": [
+                "🗺️ 互動式地圖顯示所有餐廳位置",
+                "🔍 搜尋特定餐廳或美食類型",
+                "📍 點擊地圖標記查看餐廳詳細資訊",
+                "⭐ 查看其他用戶的評價與評分",
+                "📱 獲取餐廳聯絡方式與營業時間",
+                "🚶 查看從您當前位置到餐廳的路線"
+            ],
+            "how_to": "在地圖上點擊紅色標記查看餐廳詳情，使用左上角搜尋框快速找到特定餐廳，或使用篩選功能按照評分、距離等條件篩選。"
+        },
+        "restaurant_list": {
+            "name": "餐廳列表",
+            "intro": "以清單形式瀏覽所有餐廳，方便比較和篩選。",
+            "features": [
+                "📋 完整的餐廳清單檢視",
+                "🔽 按名稱、評分、距離等排序",
+                "🏷️ 按料理類型、價位等篩選",
+                "⭐ 快速查看評分與評論摘要",
+                "🔗 點擊進入餐廳詳細頁面"
+            ],
+            "how_to": "使用頁面頂部的排序和篩選選項找到符合需求的餐廳，點擊餐廳名稱查看詳細資訊。"
+        },
+        "restaurant_detail": {
+            "name": "餐廳詳情",
+            "intro": "深入了解特定餐廳的所有資訊。",
+            "features": [
+                "🏪 餐廳基本資訊（地址、電話、營業時間）",
+                "🍜 完整菜單與價格",
+                "📸 餐廳與料理照片",
+                "💬 用戶評論與評分",
+                "🗺️ 位置地圖與交通資訊"
+            ],
+            "how_to": "瀏覽餐廳資訊，查看菜單選擇餐點，閱讀其他用戶評論幫助決策。"
+        },
+        "ai_food_analysis": {
+            "name": "AI食物營養分析",
+            "intro": "運用AI技術分析食物營養成分，幫助您了解每一餐的營養價值。",
+            "features": [
+                "🔍 輸入食物名稱進行營養分析",
+                "📊 生成詳細營養成分圖表",
+                "🥗 獲得營養價值評估",
+                "💡 收到個人化營養建議",
+                "📋 保存分析記錄到個人日記"
+            ],
+            "how_to": "在輸入框中描述您要分析的食物（如：麻婆豆腐飯），點擊分析按鈕，AI會為您生成營養報告和建議。"
+        },
+        "ai_advisor": {
+            "name": "智能營養顧問",
+            "intro": "您的專屬營養專家！提供個人化的營養諮詢與健康飲食建議。",
+            "features": [
+                "🩺 個人化健康諮詢",
+                "🍎 營養搭配建議",
+                "📈 飲食計畫規劃",
+                "🎯 特殊需求飲食指導（減重、增肌等）",
+                "⚠️ 過敏與禁忌食物提醒"
+            ],
+            "how_to": "直接向AI營養師提問，如：'我想減重，有什麼飲食建議？'或'糖尿病患者應該注意什麼？'，系統會給您專業回答。"
+        },
+        "personal_food_diary": {
+            "name": "個人飲食日記",
+            "intro": "記錄與追蹤您的每日飲食，建立健康的飲食習慣。",
+            "features": [
+                "📝 記錄每日餐食內容",
+                "📊 查看營養攝取統計",
+                "📅 按日期瀏覽飲食歷史",
+                "🎯 設定個人營養目標",
+                "📈 追蹤飲食改善進度"
+            ],
+            "how_to": "點擊'新增記錄'按鈕，輸入今天吃的食物，系統會自動計算營養成分並加入您的飲食日記。"
+        },
+        "personal_nutrition_dashboard": {
+            "name": "個人營養儀表板",
+            "intro": "一目了然您的營養狀況，協助達成健康目標。",
+            "features": [
+                "📊 營養攝取視覺化圖表",
+                "🎯 目標達成度追蹤",
+                "📈 週/月營養趨勢分析",
+                "⚡ 營養攝取建議提醒",
+                "🏆 健康里程碑記錄"
+            ],
+            "how_to": "查看圖表了解營養攝取狀況，點擊各個指標獲得詳細說明，根據建議調整飲食習慣。"
+        },
+        "ai_recommendation": {
+            "name": "AI美食推薦",
+            "intro": "基於您的偏好與需求，AI為您推薦最適合的餐廳與餐點。",
+            "features": [
+                "🤖 個人化餐廳推薦",
+                "🍽️ 根據營養需求推薦餐點",
+                "🎯 考量預算與距離的智能推薦",
+                "⭐ 結合評價的優質推薦",
+                "🔄 持續學習您的偏好"
+            ],
+            "how_to": "填寫您的偏好（料理類型、預算、距離等），AI會為您推薦最合適的選擇。越多互動，推薦越精準！"
+        },
+        "checkin_list": {
+            "name": "打卡記錄",
+            "intro": "記錄您的美食足跡，與朋友分享用餐體驗。",
+            "features": [
+                "📍 餐廳打卡記錄",
+                "⭐ 為餐廳評分與評論",
+                "📸 分享用餐照片",
+                "🏆 查看個人打卡統計",
+                "👥 瀏覽朋友的用餐動態"
+            ],
+            "how_to": "在餐廳用餐時點擊打卡按鈕，為餐廳評分並分享您的用餐感受。"
+        },
+        "article_list": {
+            "name": "美食文章",
+            "intro": "探索豐富的美食文章，獲得飲食靈感與知識。",
+            "features": [
+                "📰 閱讀最新美食文章",
+                "✍️ 發表個人美食心得",
+                "💬 與其他用戶交流討論",
+                "🔖 收藏喜愛的文章",
+                "🔍 搜尋特定主題文章"
+            ],
+            "how_to": "瀏覽文章列表，點擊標題閱讀全文，登入後可發表評論或撰寫自己的美食文章。"
+        },
+        "social": {
+            "name": "社交功能",
+            "intro": "與同學朋友分享美食體驗，建立美食社群。",
+            "features": [
+                "👥 添加好友與關注",
+                "💬 私訊與群組聊天",
+                "📱 分享用餐動態",
+                "🎉 參加美食活動",
+                "🏆 查看排行榜與成就"
+            ],
+            "how_to": "搜尋並添加朋友，分享您的用餐體驗，參與社群討論，一起探索校園美食！"
+        }
     }
 
-    # 獲取頁面上下文，如果沒有特定頁面則使用通用上下文
-    context = page_contexts.get(current_page, """這是NCU食物地圖網站，提供以下功能：
-- 中央大學周邊餐廳資訊查詢
-- 美食推薦和評分系統
-- 營養成分分析
-- 個人化飲食建議
-- 用戶打卡和分享功能
+    # 獲取當前頁面的詳細資訊
+    page_info = page_details.get(current_page)
+    if not page_info:
+        # 預設回應
+        intro = "這是 NCU 食物地圖網站，您可以查詢校園附近美食、營養資訊與健康建議。如需網站操作說明，歡迎隨時詢問！"
+    else:
+        intro = f"您目前在【{page_info['name']}】\n\n{page_info['intro']}\n\n主要功能：\n" + "\n".join(page_info['features']) + f"\n\n使用方式：{page_info['how_to']}"
 
-我可以協助您：
-1. 查找特定類型的餐廳
-2. 了解食物的營養價值
-3. 獲取健康飲食建議
-4. 使用網站的各項功能""")
+    # 組合 prompt
+    system_prompt = f"""你是 NCU 食物地圖網站的 AI 助手，只負責網站導覽與功能介紹。請根據用戶所在的頁面詳細說明該頁面的用途、主要功能、操作方式。遇到健康、營養、飲食、疾病等問題時，請禮貌地建議用戶前往『智能營養顧問』頁面詢問。
+
+當前頁面資訊：{intro}
+
+請用繁體中文回答，語氣親切友好。如果用戶詢問其他頁面功能，可以簡單介紹並建議前往該頁面使用。"""
     
-    system_prompt = """你是NCU食物地圖網站的AI助手。請注意以下要求：
-1. 必須使用繁體中文回答
-2. 禁止使用簡體中文
-3. 回答要簡潔友善
-4. 提供具體的操作建議
-5. 回答要符合台灣的用語習慣
-6. 數字優先使用半形
-7. 標點符號使用全形"""
+    user_prompt = f"用戶在【{page_info['name'] if page_info else current_page}】頁面提問：{message}"
 
-    user_prompt = f"""當前頁面情境：{context}
-
-用戶問題：{message}
-
-請根據頁面情境提供相關的具體建議和資訊。回答必須：
-1. 符合當前頁面的功能和目的
-2. 提供具體可行的操作步驟
-3. 必要時加入相關的注意事項
-4. 使用台灣的用語習慣"""
-
+    # 呼叫 Together AI 生成網站導覽說明
     try:
         logger.info(f"Sending request to Together API with prompt: {user_prompt}")
-        
         response = requests.post(
             "https://api.together.xyz/v1/chat/completions",
             headers={
@@ -114,36 +205,25 @@ def get_ai_response(message, current_page):
                     {"role": "user", "content": user_prompt}
                 ],
                 "temperature": 0.7,
-                "max_tokens": 800
+                "max_tokens": 500
             },
             timeout=30
         )
-        
         logger.info(f"API Response status: {response.status_code}")
-        logger.info(f"API Response content: {response.text[:500]}")  # 只記錄前500個字符
-        
+        logger.info(f"API Response content: {response.text[:500]}")
         if response.status_code == 200:
             response_data = response.json()
-            # choices 是 API 返回的回答陣列：
-            # - 通常包含一個或多個可能的回答
-            # - 每個 choice 包含：
-            #   - message: 包含實際的回答內容
-            #   - finish_reason: 回答結束的原因（length/stop/content_filter等）
-            #   - index: 如果有多個回答，這是回答的索引號
             if 'choices' in response_data and len(response_data['choices']) > 0:
                 return response_data['choices'][0]['message']['content'].strip()
             else:
                 logger.error(f"Unexpected API response structure: {response_data}")
-                return "抱歉，AI 回應格式不正確。請稍後再試。"
+                return intro
         else:
             logger.error(f"API request failed with status {response.status_code}: {response.text}")
-            return f"抱歉，API 請求失敗（狀態碼：{response.status_code}）。請稍後再試。"
-    except requests.exceptions.Timeout:
-        logger.error("API request timed out")
-        return "抱歉，請求超時。請稍後再試。"
+            return intro
     except Exception as e:
         logger.error(f"Error in get_ai_response: {str(e)}", exc_info=True)
-        return f"抱歉，發生錯誤：{str(e)}。請稍後再試。"
+        return intro
 
 @csrf_exempt
 @require_POST

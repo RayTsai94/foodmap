@@ -107,9 +107,9 @@
                                                     <a href="{% url 'social:user_profile' friend.id %}" class="btn btn-outline-primary btn-sm">
                                                         <i class="fas fa-user"></i> 查看
                                                     </a>
-                                                    <button class="btn btn-outline-success btn-sm">
+                                                    <a href="{% url 'social:start_private_chat' friend.id %}" class="btn btn-outline-success btn-sm">
                                                         <i class="fas fa-comment"></i> 聊天
-                                                    </button>
+                                                    </a>
                                                 </div>
                                                 <small class="text-muted d-block mt-2">
                                                     成為好友於 {{ friendship.updated_at|date:"Y-m-d" }}
@@ -138,9 +138,9 @@
                                                     <a href="{% url 'social:user_profile' friend.id %}" class="btn btn-outline-primary btn-sm">
                                                         <i class="fas fa-user"></i> 查看
                                                     </a>
-                                                    <button class="btn btn-outline-success btn-sm">
+                                                    <a href="{% url 'social:start_private_chat' friend.id %}" class="btn btn-outline-success btn-sm">
                                                         <i class="fas fa-comment"></i> 聊天
-                                                    </button>
+                                                    </a>
                                                 </div>
                                                 <small class="text-muted d-block mt-2">
                                                     成為好友於 {{ friendship.updated_at|date:"Y-m-d" }}

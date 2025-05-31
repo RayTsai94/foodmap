@@ -12,12 +12,14 @@ import os
 import json
 import together
 from dotenv import load_dotenv
+from django.conf import settings
+import re
 
 # 載入環境變數
 load_dotenv()
 
 # 初始化 Together AI 客戶端
-together.api_key = os.getenv('TOGETHER_API_KEY')
+together.api_key = settings.TOGETHER_API_KEY
 
 def nutrition_dashboard(request):
     """營養分析儀表板，提供整體食品營養概覽"""
@@ -480,27 +482,23 @@ def analyze_food(food_description):
     try:
         # 強化 prompt，要求 AI 回傳所有欄位內容，並參考台灣常見食物營養資料庫
         prompt = f"""
-請參考台灣常見食物營養資料庫，分析下列食物的營養成分，並針對健康與營養給出專業建議。
+請分析以下食物的營養成分：{food_description}
 
-食物描述：{food_description}
-
-請回傳以下格式的 JSON：
+請只回傳純JSON格式，不要包含任何註解或額外文字：
 {{
-    "calories": 數值,  // 熱量（卡）
-    "protein": 數值,   // 蛋白質（克）
-    "carbs": 數值,     // 碳水化合物（克）
-    "fat": 數值,       // 總脂肪（克）
-    "saturated_fat": 數值, // 飽和脂肪（克）
-    "trans_fat": 數值,    // 反式脂肪（克）
-    "fiber": 數值,     // 膳食纖維（克）
-    "sugar": 數值,     // 糖分（克）
-    "sodium": 數值,    // 鈉（毫克）
-    "nutritional_value": "請用100字內中文說明這份食物的營養價值，務必具體分析其優缺點。",
-    "health_impact": "請用100字內中文說明這份食物對健康的可能影響，務必具體分析。",
-    "improvement_suggestions": ["請給3點具體中文建議，如何讓這份食物更健康"]
-}}
-請務必回傳有效且可解析的 JSON，所有欄位都要有內容。
-"""
+    "calories": 數值,
+    "protein": 數值,
+    "carbs": 數值,
+    "fat": 數值,
+    "saturated_fat": 數值,
+    "trans_fat": 數值,
+    "fiber": 數值,
+    "sugar": 數值,
+    "sodium": 數值,
+    "nutritional_value": "營養價值分析文字",
+    "health_impact": "健康影響分析文字",
+    "improvement_suggestions": ["建議1", "建議2", "建議3"]
+}}"""
 
         # 調用 Together AI API
         print(f"正在使用 Together AI API 進行分析，模型：mistralai/Mixtral-8x7B-Instruct-v0.1")
@@ -521,11 +519,24 @@ def analyze_food(food_description):
             # 新的回應格式處理
             response_text = response['choices'][0]['text']
             print("Together AI 回傳內容：", response_text)
+            
+            # 清理回應文本，移除可能的前綴和後綴
+            response_text = response_text.strip()
+            
+            # 尋找JSON開始和結束位置
             json_start = response_text.find('{')
             json_end = response_text.rfind('}') + 1
+            
             if json_start == -1 or json_end <= json_start:
                 raise ValueError("無法在回應中找到有效的 JSON")
+            
             json_str = response_text[json_start:json_end]
+            
+            # 清理JSON字符串中的註解
+            json_str = re.sub(r'//.*?\n', '\n', json_str)  # 移除單行註解
+            json_str = re.sub(r'/\*.*?\*/', '', json_str, flags=re.DOTALL)  # 移除多行註解
+            
+            # 嘗試解析JSON
             analysis_result = json.loads(json_str)
             
             # 檢查所有欄位，若缺少則補預設值

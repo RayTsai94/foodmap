@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}聊天 - NCU 食物地圖{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .chat-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+        transition: transform 0.2s;
+        cursor: pointer;
+    }
+    
+    .chat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+    }
+    
+    .chat-card.unread {
+        border-left: 4px solid #007bff;
+        background-color: #f8f9ff;
+    }
+    
+    .chat-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .chat-avatar.group {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+    
+    .unread-badge {
+        background-color: #dc3545;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 8px;
+        font-size: 0.75rem;
+        min-width: 20px;
+        text-align: center;
+    }
+    
+    .last-message {
+        color: #6c757d;
+        font-size: 0.9rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .chat-time {
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+    
+    .create-chat-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        font-size: 1.5rem;
+        z-index: 1000;
+    }
+    
+    .create-chat-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- 聊天頭部 -->
+            <div class="chat-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2><i class="fas fa-comments me-2"></i>聊天</h2>
+                        <p class="mb-0">與好友和群組成員保持聯繫</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="{% url 'social:create_group_chat' %}" class="btn btn-light">
+                            <i class="fas fa-users me-2"></i>創建群組聊天
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 聊天列表 -->
+            {% for chat in chat_data %}
+            <div class="chat-card {% if chat.unread_count > 0 %}unread{% endif %}" 
+                 onclick="window.location.href='{% url 'social:chat_room' chat.room.id %}'">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <!-- 頭像 -->
+                        <div class="me-3">
+                            {% if chat.room.room_type == 'private' and chat.other_user %}
+                                {% if chat.other_user.social_profile.avatar %}
+                                    <img src="{{ chat.other_user.social_profile.avatar.url }}" 
+                                         alt="頭像" class="chat-avatar">
+                                {% else %}
+                                    <div class="chat-avatar bg-secondary d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-user text-white"></i>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="chat-avatar group">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- 聊天信息 -->
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        {% if chat.room.room_type == 'private' and chat.other_user %}
+                                            {{ chat.other_user.username }}
+                                        {% else %}
+                                            {{ chat.room.name|default:"群組聊天" }}
+                                        {% endif %}
+                                    </h6>
+                                    
+                                    {% if chat.last_message %}
+                                        <div class="last-message">
+                                            {% if chat.last_message.message_type == 'image' %}
+                                                <i class="fas fa-image me-1"></i>[圖片]
+                                            {% elif chat.last_message.message_type == 'file' %}
+                                                <i class="fas fa-file me-1"></i>[文件]
+                                            {% elif chat.last_message.message_type == 'system' %}
+                                                <i class="fas fa-info-circle me-1"></i>{{ chat.last_message.content }}
+                                            {% else %}
+                                                {{ chat.last_message.content|truncatechars:50 }}
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="last-message">還沒有消息</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- 時間和未讀數 -->
+                                <div class="text-end">
+                                    {% if chat.last_message %}
+                                        <div class="chat-time">{{ chat.last_message.created_at|date:"m-d H:i" }}</div>
+                                    {% endif %}
+                                    {% if chat.unread_count > 0 %}
+                                        <div class="unread-badge mt-1">{{ chat.unread_count }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="chat-card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                    <h5>還沒有聊天</h5>
+                    <p class="text-muted">開始與好友聊天，或創建群組聊天吧！</p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <a href="{% url 'social:friends' %}" class="btn btn-primary">
+                            <i class="fas fa-user-friends me-2"></i>查看好友
+                        </a>
+                        <a href="{% url 'social:create_group_chat' %}" class="btn btn-success">
+                            <i class="fas fa-users me-2"></i>創建群組聊天
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- 創建聊天按鈕 -->
+<button class="create-chat-btn" data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="fas fa-plus"></i>
+</button>
+<ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="{% url 'social:friends' %}">
+        <i class="fas fa-user me-2"></i>與好友聊天
+    </a></li>
+    <li><a class="dropdown-item" href="{% url 'social:create_group_chat' %}">
+        <i class="fas fa-users me-2"></i>創建群組聊天
+    </a></li>
+</ul>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 每30秒刷新一次聊天列表
+    setInterval(function() {
+        location.reload();
+    }, 30000);
+});
+</script>
+{% endblock %} 
