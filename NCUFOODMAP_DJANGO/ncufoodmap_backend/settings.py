@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'article',
     'ai_recommendation',
     'ai_assistant',
+    'social',  # 新增社交功能應用
 ]
 
 # Google OAuth 配置

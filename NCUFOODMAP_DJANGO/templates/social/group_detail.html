@@ -1,0 +1,518 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ group.name }} - 飲食群組 - NCU 食物地圖{% endblock %}
+
+{% block extra_css %}
+<style>
+    .group-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 20px;
+    }
+    
+    .group-image {
+        width: 120px;
+        height: 120px;
+        border-radius: 15px;
+        object-fit: cover;
+        border: 4px solid white;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .member-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+        transition: transform 0.2s;
+    }
+    
+    .member-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+    }
+    
+    .challenge-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+        border-left: 4px solid #28a745;
+    }
+    
+    .member-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .role-badge {
+        font-size: 0.75rem;
+    }
+    
+    .stats-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    .stats-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- 群組頭部信息 -->
+        <div class="col-12">
+            <div class="group-header">
+                <div class="row align-items-center">
+                    <div class="col-md-2 text-center">
+                        {% if group.image %}
+                            <img src="{{ group.image.url }}" alt="群組圖片" class="group-image">
+                        {% else %}
+                            <div class="group-image mx-auto bg-secondary d-flex align-items-center justify-content-center">
+                                <i class="fas fa-users fa-3x text-white"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-7">
+                        <h2>{{ group.name }}</h2>
+                        <p class="mb-2">{{ group.description }}</p>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-light text-dark me-2">
+                                <i class="fas fa-globe me-1"></i>
+                                {% if group.is_public %}公開群組{% else %}私人群組{% endif %}
+                            </span>
+                            <span class="badge bg-light text-dark">
+                                <i class="fas fa-users me-1"></i>{{ group.members.count }} 位成員
+                            </span>
+                        </div>
+                        <small class="text-light">
+                            <i class="fas fa-calendar me-1"></i>創建於 {{ group.created_at|date:"Y年m月d日" }}
+                            <span class="ms-3">
+                                <i class="fas fa-user me-1"></i>創建者：{{ group.creator.username }}
+                            </span>
+                        </small>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        {% if user_membership %}
+                            {% if user_membership.role == 'admin' %}
+                                <button class="btn btn-warning mb-2" data-bs-toggle="modal" data-bs-target="#editGroupModal">
+                                    <i class="fas fa-edit me-2"></i>編輯群組
+                                </button>
+                                <br>
+                                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteGroupModal">
+                                    <i class="fas fa-trash me-2"></i>刪除群組
+                                </button>
+                            {% elif user_membership.role == 'moderator' %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="fas fa-shield-alt me-1"></i>版主
+                                </span>
+                            {% else %}
+                                <button class="btn btn-outline-light" onclick="leaveGroup()">
+                                    <i class="fas fa-sign-out-alt me-2"></i>離開群組
+                                </button>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'social:join_group' group.id %}" class="btn btn-light">
+                                <i class="fas fa-plus me-2"></i>加入群組
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 左側：群組統計和快速操作 -->
+        <div class="col-md-4">
+            <!-- 群組統計 -->
+            <div class="card member-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar me-2"></i>群組統計
+                    </h5>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="stats-card">
+                                <div class="stats-number">{{ group.members.count }}</div>
+                                <small>成員數</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stats-card">
+                                <div class="stats-number">{{ group.challenges.count }}</div>
+                                <small>挑戰數</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 快速操作 -->
+            {% if user_membership %}
+            <div class="card member-card">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-bolt me-2"></i>快速操作
+                    </h6>
+                    <div class="d-grid gap-2">
+                        {% if user_membership.role in 'admin,moderator' %}
+                            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createChallengeModal">
+                                <i class="fas fa-trophy me-2"></i>創建挑戰
+                            </button>
+                            <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#inviteMemberModal">
+                                <i class="fas fa-user-plus me-2"></i>邀請成員
+                            </button>
+                        {% endif %}
+                        <a href="{% url 'social:feed' %}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-share me-2"></i>分享到動態
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- 右側：成員列表和挑戰活動 -->
+        <div class="col-md-8">
+            <!-- 標籤導航 -->
+            <ul class="nav nav-tabs" id="groupTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="members-tab" data-bs-toggle="tab" 
+                            data-bs-target="#members" type="button" role="tab">
+                        <i class="fas fa-users me-2"></i>成員列表 ({{ group.members.count }})
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="challenges-tab" data-bs-toggle="tab" 
+                            data-bs-target="#challenges" type="button" role="tab">
+                        <i class="fas fa-trophy me-2"></i>群組挑戰 ({{ group.challenges.count }})
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="groupTabsContent">
+                <!-- 成員列表 -->
+                <div class="tab-pane fade show active" id="members" role="tabpanel">
+                    <div class="mt-3">
+                        {% for membership in group.memberships.all %}
+                        <div class="member-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    {% if membership.user.social_profile.avatar %}
+                                        <img src="{{ membership.user.social_profile.avatar.url }}" alt="頭像" class="member-avatar me-3">
+                                    {% else %}
+                                        <div class="member-avatar me-3 bg-secondary d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-user text-white"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0">{{ membership.user.username }}</h6>
+                                        <small class="text-muted">加入於 {{ membership.joined_at|date:"Y-m-d" }}</small>
+                                        {% if membership.user.social_profile.bio %}
+                                            <p class="mb-0 small text-muted">{{ membership.user.social_profile.bio|truncatechars:50 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        {% if membership.role == 'admin' %}
+                                            <span class="badge bg-danger role-badge">
+                                                <i class="fas fa-crown me-1"></i>管理員
+                                            </span>
+                                        {% elif membership.role == 'moderator' %}
+                                            <span class="badge bg-warning role-badge">
+                                                <i class="fas fa-shield-alt me-1"></i>版主
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary role-badge">
+                                                <i class="fas fa-user me-1"></i>成員
+                                            </span>
+                                        {% endif %}
+                                        
+                                        {% if user_membership and user_membership.role == 'admin' and membership.user != request.user %}
+                                            <div class="dropdown">
+                                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-cog"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    {% if membership.role == 'member' %}
+                                                        <li><a class="dropdown-item" href="#" onclick="changeRole({{ membership.id }}, 'moderator')">
+                                                            <i class="fas fa-arrow-up me-2"></i>升級為版主
+                                                        </a></li>
+                                                    {% elif membership.role == 'moderator' %}
+                                                        <li><a class="dropdown-item" href="#" onclick="changeRole({{ membership.id }}, 'member')">
+                                                            <i class="fas fa-arrow-down me-2"></i>降級為成員
+                                                        </a></li>
+                                                    {% endif %}
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-danger" href="#" onclick="removeMember({{ membership.id }})">
+                                                        <i class="fas fa-user-times me-2"></i>移除成員
+                                                    </a></li>
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="card member-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                <h5>還沒有成員</h5>
+                                <p class="text-muted">開始邀請朋友加入群組吧！</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- 群組挑戰 -->
+                <div class="tab-pane fade" id="challenges" role="tabpanel">
+                    <div class="mt-3">
+                        {% for challenge in group.challenges.all %}
+                        <div class="challenge-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="card-title">{{ challenge.title }}</h6>
+                                        <p class="card-text">{{ challenge.description }}</p>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i>
+                                                {{ challenge.start_date|date:"m/d" }} - {{ challenge.end_date|date:"m/d" }}
+                                            </small>
+                                            <small class="text-muted">
+                                                <i class="fas fa-users me-1"></i>
+                                                {{ challenge.participants.count }} 人參與
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        {% if challenge.challenge_type == 'calorie_limit' %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-fire me-1"></i>熱量控制
+                                            </span>
+                                        {% elif challenge.challenge_type == 'protein_goal' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-dumbbell me-1"></i>蛋白質目標
+                                            </span>
+                                        {% elif challenge.challenge_type == 'vegetarian_days' %}
+                                            <span class="badge bg-info">
+                                                <i class="fas fa-leaf me-1"></i>素食挑戰
+                                            </span>
+                                        {% endif %}
+                                        
+                                        {% if user_membership %}
+                                            {% if challenge in user_challenges %}
+                                                <button class="btn btn-success btn-sm mt-2">
+                                                    <i class="fas fa-check me-1"></i>已參與
+                                                </button>
+                                            {% else %}
+                                                <button class="btn btn-outline-primary btn-sm mt-2" onclick="joinChallenge({{ challenge.id }})">
+                                                    <i class="fas fa-plus me-1"></i>參與挑戰
+                                                </button>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="card challenge-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                                <h5>還沒有挑戰活動</h5>
+                                <p class="text-muted">創建第一個群組挑戰來激勵大家吧！</p>
+                                {% if user_membership and user_membership.role in 'admin,moderator' %}
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createChallengeModal">
+                                        <i class="fas fa-plus me-2"></i>創建挑戰
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 刪除群組確認模態框 -->
+{% if user_membership and user_membership.role == 'admin' %}
+<div class="modal fade" id="deleteGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>刪除群組
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>您確定要刪除群組「<strong>{{ group.name }}</strong>」嗎？</p>
+                <div class="alert alert-danger">
+                    <i class="fas fa-warning me-2"></i>
+                    <strong>警告：</strong>此操作無法復原！刪除後將會：
+                    <ul class="mb-0 mt-2">
+                        <li>移除所有成員</li>
+                        <li>刪除所有挑戰活動</li>
+                        <li>清除相關的通知和記錄</li>
+                    </ul>
+                </div>
+                <p>請輸入群組名稱「<strong>{{ group.name }}</strong>」來確認刪除：</p>
+                <input type="text" class="form-control" id="confirmGroupName" placeholder="請輸入群組名稱">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn" disabled onclick="deleteGroup()">
+                    <i class="fas fa-trash me-2"></i>確認刪除
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 確認刪除群組名稱輸入
+$('#confirmGroupName').on('input', function() {
+    const groupName = '{{ group.name }}';
+    const inputValue = $(this).val();
+    const confirmBtn = $('#confirmDeleteBtn');
+    
+    if (inputValue === groupName) {
+        confirmBtn.prop('disabled', false);
+    } else {
+        confirmBtn.prop('disabled', true);
+    }
+});
+
+// 刪除群組
+function deleteGroup() {
+    $.ajax({
+        url: '{% url "social:delete_group" group.id %}',
+        type: 'POST',
+        data: {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(data) {
+            if (data.success) {
+                alert('群組已成功刪除！');
+                window.location.href = '{% url "social:groups" %}';
+            } else {
+                alert('刪除失敗：' + data.error);
+            }
+        },
+        error: function() {
+            alert('刪除失敗，請稍後再試。');
+        }
+    });
+}
+
+// 離開群組
+function leaveGroup() {
+    if (confirm('您確定要離開這個群組嗎？')) {
+        $.ajax({
+            url: '{% url "social:leave_group" group.id %}',
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(data) {
+                if (data.success) {
+                    alert('已成功離開群組！');
+                    window.location.href = '{% url "social:groups" %}';
+                } else {
+                    alert('離開失敗：' + data.error);
+                }
+            },
+            error: function() {
+                alert('操作失敗，請稍後再試。');
+            }
+        });
+    }
+}
+
+// 參與挑戰
+function joinChallenge(challengeId) {
+    $.ajax({
+        url: '/social/challenge/' + challengeId + '/join/',
+        type: 'POST',
+        data: {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('參與失敗：' + data.error);
+            }
+        },
+        error: function() {
+            alert('操作失敗，請稍後再試。');
+        }
+    });
+}
+
+// 更改成員角色
+function changeRole(membershipId, newRole) {
+    if (confirm('確定要更改此成員的角色嗎？')) {
+        $.ajax({
+            url: '/social/membership/' + membershipId + '/change-role/',
+            type: 'POST',
+            data: {
+                'role': newRole,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(data) {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('操作失敗：' + data.error);
+                }
+            },
+            error: function() {
+                alert('操作失敗，請稍後再試。');
+            }
+        });
+    }
+}
+
+// 移除成員
+function removeMember(membershipId) {
+    if (confirm('確定要移除此成員嗎？')) {
+        $.ajax({
+            url: '/social/membership/' + membershipId + '/remove/',
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(data) {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('操作失敗：' + data.error);
+                }
+            },
+            error: function() {
+                alert('操作失敗，請稍後再試。');
+            }
+        });
+    }
+}
+</script>
+{% endblock %} 

@@ -29,6 +29,7 @@ urlpatterns = [
     path('article/', include('article.urls')),
     path('ai_recommendation/', include('ai_recommendation.urls')),
     path('ai_assistant/', include('ai_assistant.urls')),
+    path('social/', include('social.urls')),
 ]
 
 # 媒體文件服務設定（僅在開發環境下）

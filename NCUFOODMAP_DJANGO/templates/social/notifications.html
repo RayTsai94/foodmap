@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}通知 - NCU 食物地圖{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notification-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+        transition: transform 0.2s;
+    }
+    
+    .notification-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+    }
+    
+    .notification-card.unread {
+        border-left: 4px solid #007bff;
+        background-color: #f8f9ff;
+    }
+    
+    .notification-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: white;
+    }
+    
+    .notification-icon.friend_request {
+        background-color: #28a745;
+    }
+    
+    .notification-icon.friend_accepted {
+        background-color: #17a2b8;
+    }
+    
+    .notification-icon.post_like {
+        background-color: #dc3545;
+    }
+    
+    .notification-icon.post_comment {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    
+    .notification-icon.group_invite {
+        background-color: #6f42c1;
+    }
+    
+    .notification-icon.challenge_invite {
+        background-color: #fd7e14;
+    }
+    
+    .notification-icon.achievement {
+        background-color: #20c997;
+    }
+    
+    .stats-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .mark-read-btn {
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    
+    .notification-card:hover .mark-read-btn {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- 統計頭部 -->
+            <div class="stats-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2><i class="fas fa-bell me-2"></i>通知中心</h2>
+                        <p class="mb-0">掌握最新的社交動態和互動消息</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="d-flex justify-content-end align-items-center">
+                            <div class="text-center me-4">
+                                <h3 class="mb-0">{{ unread_count }}</h3>
+                                <small>未讀通知</small>
+                            </div>
+                            <div class="text-center">
+                                <h3 class="mb-0">{{ notifications.paginator.count }}</h3>
+                                <small>總通知數</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 通知列表 -->
+            {% for notification in notifications %}
+            <div class="notification-card {% if not notification.is_read %}unread{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex align-items-start">
+                        <!-- 通知圖標 -->
+                        <div class="notification-icon {{ notification.notification_type }} me-3">
+                            {% if notification.notification_type == 'friend_request' %}
+                                <i class="fas fa-user-plus"></i>
+                            {% elif notification.notification_type == 'friend_accepted' %}
+                                <i class="fas fa-user-check"></i>
+                            {% elif notification.notification_type == 'post_like' %}
+                                <i class="fas fa-heart"></i>
+                            {% elif notification.notification_type == 'post_comment' %}
+                                <i class="fas fa-comment"></i>
+                            {% elif notification.notification_type == 'group_invite' %}
+                                <i class="fas fa-users"></i>
+                            {% elif notification.notification_type == 'challenge_invite' %}
+                                <i class="fas fa-trophy"></i>
+                            {% elif notification.notification_type == 'achievement' %}
+                                <i class="fas fa-medal"></i>
+                            {% else %}
+                                <i class="fas fa-bell"></i>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- 通知內容 -->
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ notification.title }}</h6>
+                                    <p class="mb-2 text-muted">{{ notification.message }}</p>
+                                    
+                                    <!-- 發送者信息 -->
+                                    {% if notification.sender %}
+                                    <div class="d-flex align-items-center mb-2">
+                                        {% if notification.sender.social_profile.avatar %}
+                                            <img src="{{ notification.sender.social_profile.avatar.url }}" 
+                                                 alt="頭像" class="rounded-circle me-2" 
+                                                 style="width: 30px; height: 30px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="rounded-circle me-2 bg-secondary d-flex align-items-center justify-content-center" 
+                                                 style="width: 30px; height: 30px;">
+                                                <i class="fas fa-user text-white small"></i>
+                                            </div>
+                                        {% endif %}
+                                        <small class="text-muted">來自 {{ notification.sender.username }}</small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- 相關連結 -->
+                                    <div class="d-flex gap-2">
+                                        {% if notification.related_post %}
+                                            <a href="{% url 'social:feed' %}#post-{{ notification.related_post.id }}" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye me-1"></i>查看動態
+                                            </a>
+                                        {% endif %}
+                                        
+                                        {% if notification.related_group %}
+                                            <a href="{% url 'social:group_detail' notification.related_group.id %}" 
+                                               class="btn btn-outline-success btn-sm">
+                                                <i class="fas fa-users me-1"></i>查看群組
+                                            </a>
+                                        {% endif %}
+                                        
+                                        {% if notification.notification_type == 'friend_request' and notification.sender %}
+                                            <a href="{% url 'social:friends' %}" class="btn btn-outline-info btn-sm">
+                                                <i class="fas fa-user-friends me-1"></i>處理請求
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- 操作按鈕 -->
+                                <div class="d-flex flex-column align-items-end">
+                                    <small class="text-muted mb-2">{{ notification.created_at|date:"m-d H:i" }}</small>
+                                    {% if not notification.is_read %}
+                                        <button class="btn btn-outline-secondary btn-sm mark-read-btn" 
+                                                onclick="markAsRead({{ notification.id }})">
+                                            <i class="fas fa-check me-1"></i>標記已讀
+                                        </button>
+                                    {% else %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>已讀
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="card notification-card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                    <h5>沒有通知</h5>
+                    <p class="text-muted">當有新的社交活動時，通知會顯示在這裡。</p>
+                    <a href="{% url 'social:feed' %}" class="btn btn-primary">
+                        <i class="fas fa-home me-2"></i>回到動態首頁
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- 分頁 -->
+            {% if notifications.has_other_pages %}
+            <nav aria-label="通知分頁" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if notifications.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ notifications.previous_page_number }}">
+                                <i class="fas fa-chevron-left me-1"></i>上一頁
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in notifications.paginator.page_range %}
+                        {% if notifications.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if notifications.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ notifications.next_page_number }}">
+                                下一頁<i class="fas fa-chevron-right ms-1"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function markAsRead(notificationId) {
+    $.ajax({
+        url: '{% url "social:notifications" %}',
+        type: 'POST',
+        data: {
+            'notification_id': notificationId,
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(data) {
+            if (data.success) {
+                // 重新載入頁面以更新狀態
+                location.reload();
+            }
+        },
+        error: function() {
+            alert('標記失敗，請稍後再試。');
+        }
+    });
+}
+
+$(document).ready(function() {
+    // 自動標記為已讀（當用戶停留在頁面上一段時間後）
+    setTimeout(function() {
+        $('.notification-card.unread').each(function() {
+            const notificationId = $(this).find('.mark-read-btn').attr('onclick');
+            if (notificationId) {
+                const id = notificationId.match(/\d+/)[0];
+                // 可以選擇自動標記為已讀
+                // markAsRead(id);
+            }
+        });
+    }, 5000); // 5秒後自動標記
+});
+</script>
+{% endblock %} 
