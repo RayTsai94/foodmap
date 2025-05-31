@@ -215,5 +215,15 @@ LOGGING = {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
         },
+        'django.utils.autoreload': {
+            'handlers': [],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
     },
 }

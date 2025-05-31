@@ -12,7 +12,7 @@ import json
 from .models import (
     Friendship, SocialPost, PostLike, PostComment, 
     FoodGroup, GroupMembership, GroupChallenge, ChallengeParticipation,
-    UserProfile, Notification
+    UserProfile, Notification, ChatRoom, ChatParticipant, ChatMessage
 )
 from .forms import (
     SocialPostForm, PostCommentForm, FoodGroupForm, 
@@ -307,8 +307,8 @@ def group_detail(request, group_id):
         messages.error(request, '你沒有權限查看此群組。')
         return redirect('social:groups')
     
-    # 群組成員
-    members = GroupMembership.objects.filter(group=group).select_related('user')
+    # 群組成員 - 修復查詢
+    memberships = GroupMembership.objects.filter(group=group).select_related('user', 'user__social_profile')
     
     # 群組挑戰
     challenges = GroupChallenge.objects.filter(group=group).order_by('-created_at')
@@ -330,7 +330,7 @@ def group_detail(request, group_id):
         'group': group,
         'user_membership': user_membership,
         'is_member': is_member,
-        'members': members,
+        'memberships': memberships,  # 添加成員列表
         'challenges': challenges,
         'user_challenges': user_challenges,
         'group_posts': group_posts,
@@ -412,10 +412,18 @@ def notifications(request):
     if request.method == 'POST':
         notification_id = request.POST.get('notification_id')
         if notification_id:
-            notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
-            notification.is_read = True
-            notification.save()
-            return JsonResponse({'success': True})
+            try:
+                notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
+                notification.is_read = True
+                notification.save()
+                return JsonResponse({'success': True})
+            except Exception as e:
+                import traceback
+                print(f"Mark as read error: {str(e)}")
+                print(traceback.format_exc())
+                return JsonResponse({'success': False, 'error': f'標記失敗：{str(e)}'})
+        else:
+            return JsonResponse({'success': False, 'error': '缺少通知ID'})
     
     # 分頁
     paginator = Paginator(notifications, 20)
@@ -492,6 +500,322 @@ def leave_group(request, group_id):
             
             return JsonResponse({'success': True, 'message': f'已成功離開群組 {group.name}'})
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            import traceback
+            print(f"Leave group error: {str(e)}")
+            print(traceback.format_exc())
+            return JsonResponse({'success': False, 'error': f'操作失敗：{str(e)}'})
+    
+    return JsonResponse({'success': False, 'error': '無效的請求方法'})
+
+@login_required
+def change_member_role(request, membership_id):
+    """更改成員角色"""
+    membership = get_object_or_404(GroupMembership, id=membership_id)
+    group = membership.group
+    
+    # 檢查權限：必須是管理員
+    user_membership = GroupMembership.objects.filter(user=request.user, group=group, role='admin').first()
+    if not user_membership:
+        return JsonResponse({'success': False, 'error': '你沒有權限執行此操作'})
+    
+    if request.method == 'POST':
+        new_role = request.POST.get('role')
+        if new_role in ['admin', 'moderator', 'member']:
+            try:
+                membership.role = new_role
+                membership.save()
+                
+                # 創建通知
+                Notification.objects.create(
+                    recipient=membership.user,
+                    sender=request.user,
+                    notification_type='group_invite',
+                    title='群組角色變更',
+                    message=f'你在群組 {group.name} 的角色已變更為 {membership.get_role_display()}',
+                    related_group=group
+                )
+                
+                return JsonResponse({'success': True, 'message': '角色更新成功'})
+            except Exception as e:
+                import traceback
+                print(f"Change role error: {str(e)}")
+                print(traceback.format_exc())
+                return JsonResponse({'success': False, 'error': f'操作失敗：{str(e)}'})
+        else:
+            return JsonResponse({'success': False, 'error': '無效的角色'})
+    
+    return JsonResponse({'success': False, 'error': '無效的請求方法'})
+
+@login_required
+def remove_member(request, membership_id):
+    """移除群組成員"""
+    membership = get_object_or_404(GroupMembership, id=membership_id)
+    group = membership.group
+    
+    # 檢查權限：必須是管理員
+    user_membership = GroupMembership.objects.filter(user=request.user, group=group, role='admin').first()
+    if not user_membership:
+        return JsonResponse({'success': False, 'error': '你沒有權限執行此操作'})
+    
+    # 不能移除自己
+    if membership.user == request.user:
+        return JsonResponse({'success': False, 'error': '不能移除自己'})
+    
+    if request.method == 'POST':
+        try:
+            removed_user = membership.user
+            membership.delete()
+            
+            # 創建通知
+            Notification.objects.create(
+                recipient=removed_user,
+                sender=request.user,
+                notification_type='group_invite',
+                title='已被移出群組',
+                message=f'你已被移出群組 {group.name}',
+                related_group=group
+            )
+            
+            return JsonResponse({'success': True, 'message': '成員已移除'})
+        except Exception as e:
+            import traceback
+            print(f"Remove member error: {str(e)}")
+            print(traceback.format_exc())
+            return JsonResponse({'success': False, 'error': f'操作失敗：{str(e)}'})
+    
+    return JsonResponse({'success': False, 'error': '無效的請求方法'})
+
+@login_required
+def chat_list(request):
+    """聊天列表"""
+    # 獲取用戶參與的所有聊天室
+    chat_rooms = ChatRoom.objects.filter(
+        participants=request.user,
+        chatparticipant__is_active=True
+    ).prefetch_related('participants', 'messages').distinct()
+    
+    # 為每個聊天室添加額外信息
+    chat_data = []
+    for room in chat_rooms:
+        last_message = room.get_last_message()
+        unread_count = room.get_unread_count(request.user)
+        
+        # 獲取聊天對象（私人聊天）
+        other_user = None
+        if room.room_type == 'private':
+            participants = room.participants.exclude(id=request.user.id)
+            other_user = participants.first() if participants.exists() else None
+        
+        chat_data.append({
+            'room': room,
+            'last_message': last_message,
+            'unread_count': unread_count,
+            'other_user': other_user,
+        })
+    
+    context = {
+        'chat_data': chat_data,
+    }
+    return render(request, 'social/chat_list.html', context)
+
+@login_required
+def chat_room(request, room_id):
+    """聊天室詳情"""
+    room = get_object_or_404(ChatRoom, id=room_id)
+    
+    # 檢查用戶是否有權限訪問此聊天室
+    participant = ChatParticipant.objects.filter(user=request.user, chat_room=room).first()
+    if not participant:
+        messages.error(request, '你沒有權限訪問此聊天室。')
+        return redirect('social:chat_list')
+    
+    # 如果參與者不活躍，重新激活
+    if not participant.is_active:
+        participant.is_active = True
+        participant.save()
+    
+    # 獲取聊天消息
+    chat_messages = ChatMessage.objects.filter(
+        chat_room=room,
+        is_deleted=False
+    ).select_related('sender', 'reply_to').order_by('created_at')
+    
+    # 標記消息為已讀
+    participant.last_read_at = timezone.now()
+    participant.save()
+    
+    # 發送消息
+    if request.method == 'POST':
+        content = request.POST.get('content', '').strip()
+        message_type = request.POST.get('message_type', 'text')
+        reply_to_id = request.POST.get('reply_to')
+        
+        if content or request.FILES.get('image') or request.FILES.get('file'):
+            message = ChatMessage.objects.create(
+                chat_room=room,
+                sender=request.user,
+                message_type=message_type,
+                content=content
+            )
+            
+            # 處理圖片上傳
+            if request.FILES.get('image'):
+                message.image = request.FILES['image']
+                message.message_type = 'image'
+            
+            # 處理文件上傳
+            if request.FILES.get('file'):
+                message.file = request.FILES['file']
+                message.message_type = 'file'
+            
+            # 處理回覆消息
+            if reply_to_id:
+                try:
+                    reply_to = ChatMessage.objects.get(id=reply_to_id, chat_room=room)
+                    message.reply_to = reply_to
+                except ChatMessage.DoesNotExist:
+                    pass
+            
+            message.save()
+            
+            # 更新聊天室的最後更新時間
+            room.updated_at = timezone.now()
+            room.save()
+            
+            # 如果是 AJAX 請求，返回 JSON
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': {
+                        'id': message.id,
+                        'content': message.content,
+                        'sender': message.sender.username,
+                        'created_at': message.created_at.strftime('%H:%M'),
+                        'message_type': message.message_type,
+                    }
+                })
+            
+            return redirect('social:chat_room', room_id=room_id)
+    
+    # 獲取其他參與者
+    other_participants = room.participants.exclude(id=request.user.id)
+    
+    context = {
+        'room': room,
+        'messages': chat_messages,
+        'other_participants': other_participants,
+    }
+    return render(request, 'social/chat_room.html', context)
+
+@login_required
+def start_private_chat(request, user_id):
+    """開始私人聊天"""
+    other_user = get_object_or_404(User, id=user_id)
+    
+    if other_user == request.user:
+        messages.error(request, '不能與自己聊天。')
+        return redirect('social:chat_list')
+    
+    # 檢查是否已存在私人聊天室
+    existing_room = ChatRoom.objects.filter(
+        room_type='private',
+        participants=request.user
+    ).filter(participants=other_user).first()
+    
+    if existing_room:
+        return redirect('social:chat_room', room_id=existing_room.id)
+    
+    # 創建新的私人聊天室
+    room = ChatRoom.objects.create(
+        room_type='private',
+        created_by=request.user
+    )
+    
+    # 添加參與者
+    ChatParticipant.objects.create(user=request.user, chat_room=room, is_active=True)
+    ChatParticipant.objects.create(user=other_user, chat_room=room, is_active=True)
+    
+    # 不創建系統消息，直接跳轉
+    return redirect('social:chat_room', room_id=room.id)
+
+@login_required
+def create_group_chat(request):
+    """創建群組聊天"""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        participant_ids = request.POST.getlist('participants')
+        
+        if not name:
+            messages.error(request, '請輸入群組聊天名稱。')
+            return redirect('social:chat_list')
+        
+        if len(participant_ids) < 1:
+            messages.error(request, '請至少選擇一個參與者。')
+            return redirect('social:chat_list')
+        
+        # 創建群組聊天室
+        room = ChatRoom.objects.create(
+            name=name,
+            room_type='group',
+            created_by=request.user
+        )
+        
+        # 添加創建者
+        ChatParticipant.objects.create(user=request.user, chat_room=room, is_active=True)
+        
+        # 添加其他參與者
+        for user_id in participant_ids:
+            try:
+                user = User.objects.get(id=user_id)
+                ChatParticipant.objects.create(user=user, chat_room=room, is_active=True)
+            except User.DoesNotExist:
+                continue
+        
+        # 不創建系統消息
+        messages.success(request, '群組聊天創建成功！')
+        return redirect('social:chat_room', room_id=room.id)
+    
+    # 獲取好友列表
+    friends = Friendship.objects.filter(
+        Q(from_user=request.user, status='accepted') |
+        Q(to_user=request.user, status='accepted')
+    ).select_related('from_user', 'to_user')
+    
+    friend_users = []
+    for friendship in friends:
+        friend_user = friendship.to_user if friendship.from_user == request.user else friendship.from_user
+        friend_users.append(friend_user)
+    
+    context = {
+        'friends': friend_users,
+    }
+    return render(request, 'social/create_group_chat.html', context)
+
+@login_required
+def delete_message(request, message_id):
+    """刪除消息"""
+    if request.method == 'POST':
+        message = get_object_or_404(ChatMessage, id=message_id, sender=request.user)
+        message.is_deleted = True
+        message.content = '此消息已被刪除'
+        message.save()
+        
+        return JsonResponse({'success': True})
+    
+    return JsonResponse({'success': False, 'error': '無效的請求方法'})
+
+@login_required
+def leave_chat_room(request, room_id):
+    """離開聊天室"""
+    room = get_object_or_404(ChatRoom, id=room_id)
+    participant = get_object_or_404(ChatParticipant, user=request.user, chat_room=room)
+    
+    if request.method == 'POST':
+        participant.is_active = False
+        participant.save()
+        
+        # 不創建系統消息
+        messages.success(request, '已離開聊天室。')
+        return redirect('social:chat_list')
     
     return JsonResponse({'success': False, 'error': '無效的請求方法'}) 

@@ -205,4 +205,87 @@ class Notification(models.Model):
         ordering = ['-created_at']
         
     def __str__(self):
-        return f"{self.recipient.username} - {self.title}"
+        return f"{self.notification_type} - {self.recipient.username}"
+
+class ChatRoom(models.Model):
+    """聊天室模型"""
+    ROOM_TYPES = [
+        ('private', '私人聊天'),
+        ('group', '群組聊天'),
+    ]
+    
+    name = models.CharField(max_length=100, blank=True)  # 群組聊天室名稱
+    room_type = models.CharField(max_length=10, choices=ROOM_TYPES, default='private')
+    participants = models.ManyToManyField(User, through='ChatParticipant', related_name='chat_rooms')
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_chat_rooms')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # 關聯的群組（如果是群組聊天）
+    related_group = models.OneToOneField(FoodGroup, on_delete=models.CASCADE, blank=True, null=True, related_name='chat_room')
+    
+    class Meta:
+        ordering = ['-updated_at']
+    
+    def __str__(self):
+        if self.room_type == 'group':
+            return f"群組聊天: {self.name or self.related_group.name}"
+        else:
+            participants = list(self.participants.all()[:2])
+            if len(participants) == 2:
+                return f"私人聊天: {participants[0].username} & {participants[1].username}"
+            return f"私人聊天: {self.id}"
+    
+    def get_last_message(self):
+        """獲取最後一條消息"""
+        return self.messages.first()
+    
+    def get_unread_count(self, user):
+        """獲取用戶未讀消息數"""
+        participant = self.chatparticipant_set.filter(user=user).first()
+        if not participant:
+            return 0
+        return self.messages.filter(created_at__gt=participant.last_read_at).exclude(sender=user).count()
+
+class ChatParticipant(models.Model):
+    """聊天室參與者模型"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    chat_room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE)
+    joined_at = models.DateTimeField(auto_now_add=True)
+    last_read_at = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=True)  # 是否還在聊天室中
+    
+    class Meta:
+        unique_together = ('user', 'chat_room')
+    
+    def __str__(self):
+        return f"{self.user.username} in {self.chat_room}"
+
+class ChatMessage(models.Model):
+    """聊天消息模型"""
+    MESSAGE_TYPES = [
+        ('text', '文字消息'),
+        ('image', '圖片消息'),
+        ('file', '文件消息'),
+        ('system', '系統消息'),
+    ]
+    
+    chat_room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    message_type = models.CharField(max_length=10, choices=MESSAGE_TYPES, default='text')
+    content = models.TextField()
+    image = models.ImageField(upload_to='chat_images/', blank=True, null=True)
+    file = models.FileField(upload_to='chat_files/', blank=True, null=True)
+    
+    # 回覆消息
+    reply_to = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name='replies')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_deleted = models.BooleanField(default=False)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.sender.username}: {self.content[:50]}..."

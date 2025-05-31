@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}NCU 食物地圖{% endblock %}</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -364,6 +365,7 @@
                                 <li><a class="dropdown-item" href="{% url 'social:feed' %}"><i class="fas fa-home me-2"></i>動態首頁</a></li>
                                 <li><a class="dropdown-item" href="{% url 'social:friends' %}"><i class="fas fa-user-friends me-2"></i>我的好友</a></li>
                                 <li><a class="dropdown-item" href="{% url 'social:groups' %}"><i class="fas fa-users me-2"></i>飲食群組</a></li>
+                                <li><a class="dropdown-item" href="{% url 'social:chat_list' %}"><i class="fas fa-comments me-2"></i>聊天</a></li>
                                 <li><a class="dropdown-item" href="{% url 'social:profile' %}"><i class="fas fa-user me-2"></i>個人資料</a></li>
                                 <li><a class="dropdown-item" href="{% url 'social:notifications' %}"><i class="fas fa-bell me-2"></i>通知</a></li>
                             </ul>
@@ -419,19 +421,6 @@
         <div class="content-wrapper">
             <!-- 頁面內容 -->
             <main class="container py-4">
-                {% if messages %}
-                    <div class="row">
-                        <div class="col-12">
-                            {% for message in messages %}
-                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                                    {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endif %}
-                
                 {% block content %}{% endblock %}
             </main>
         </div>
@@ -638,198 +627,8 @@
                     </div>
                 </div>
             `;
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            try {
-                // 獲取當前頁面名稱
-                const currentPath = window.location.pathname;
-                let currentPage = 'home';
-                
-                // 餐廳相關頁面
-                if (currentPath.includes('restaurants/')) {
-                    currentPage = 'restaurant_list';
-                } else if (currentPath.includes('restaurant/')) {
-                    currentPage = 'restaurant_detail';
-                } else if (currentPath.includes('menu-items/')) {
-                    currentPage = 'menu_item_detail';
-                } else if (currentPath.includes('map/')) {
-                    currentPage = 'map';
-                }
-                
-                // 打卡相關頁面
-                else if (currentPath.includes('checkin/')) {
-                    if (currentPath.includes('ranking/')) {
-                        currentPage = 'checkin_ranking';
-                    } else if (currentPath.includes('user_ranking/')) {
-                        currentPage = 'user_ranking';
-                    } else if (currentPath.includes('restaurant_ranking/')) {
-                        currentPage = 'restaurant_ranking';
-                    } else if (currentPath.includes('my_points/')) {
-                        currentPage = 'my_points';
-                    } else {
-                        currentPage = 'checkin';
-                    }
-                }
-                
-                // 文章相關頁面
-                else if (currentPath.includes('article/')) {
-                    if (currentPath.includes('create/')) {
-                        currentPage = 'article_create';
-                    } else if (currentPath.includes('edit/')) {
-                        currentPage = 'article_edit';
-                    } else if (currentPath.includes('comment/')) {
-                        currentPage = 'article_comment';
-                    } else {
-                        currentPage = 'article';
-                    }
-                }
-                
-                // 食物分析相關頁面
-                else if (currentPath.includes('food_analysis/')) {
-                    if (currentPath.includes('preferences/')) {
-                        currentPage = 'dietary_preferences';
-                    } else if (currentPath.includes('allergens/')) {
-                        currentPage = 'allergen_info';
-                    } else if (currentPath.includes('ingredients/')) {
-                        currentPage = 'ingredient_analysis';
-                    } else if (currentPath.includes('ai-advisor/')) {
-                        currentPage = 'ai_advisor';
-                    } else if (currentPath.includes('ai-food-analysis/')) {
-                        currentPage = 'ai_food_analysis';
-                    } else {
-                        currentPage = 'nutrition_dashboard';
-                    }
-                }
-                
-                // AI推薦相關頁面
-                else if (currentPath.includes('ai_recommendation/')) {
-                    currentPage = 'ai_recommendation';
-                }
-                
-                // 使用者相關頁面
-                else if (currentPath.includes('accounts/')) {
-                    currentPage = 'account';
-                } else if (currentPath.includes('auth/')) {
-                    currentPage = 'auth';
-                } else if (currentPath.includes('delete-account/')) {
-                    currentPage = 'delete_account';
-                }
-
-                // 發送請求到後端
-                const response = await fetch('/ai_assistant/chat/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        current_page: currentPage
-                    })
-                });
-
-                const data = await response.json();
-                
-                // 移除載入中提示
-                const loadingElement = document.getElementById(loadingId);
-                if (loadingElement) {
-                    loadingElement.remove();
-                }
-
-                // 添加AI回應
-                if (data.response) {
-                    chatMessages.innerHTML += `
-                        <div class="message-wrapper assistant-message-wrapper">
-                            <div class="message assistant-message">
-                                <div class="message-content">${data.response}</div>
-                                <div class="message-time">${timeString}</div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    throw new Error('No response from AI');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                // 移除載入中提示
-                const loadingElement = document.getElementById(loadingId);
-                if (loadingElement) {
-                    loadingElement.remove();
-                }
-                
-                // 只在發生錯誤時顯示錯誤消息
-                chatMessages.innerHTML += `
-                    <div class="message-wrapper assistant-message-wrapper">
-                        <div class="message assistant-message text-danger">
-                            <div class="message-content">抱歉，發生了一些錯誤。請稍後再試。</div>
-                            <div class="message-time">${timeString}</div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-
-        // 修改拖曳調整大小的功能
-        document.addEventListener('DOMContentLoaded', function() {
-            const assistant = document.getElementById('ai-assistant');
-            const handle = assistant.querySelector('.resize-handle');
-            let isResizing = false;
-            let originalWidth;
-            let originalHeight;
-            let originalX;
-            let originalY;
-
-            handle.addEventListener('mousedown', function(e) {
-                isResizing = true;
-                originalWidth = assistant.offsetWidth;
-                originalHeight = assistant.offsetHeight;
-                originalX = e.clientX;
-                originalY = e.clientY;
-                e.preventDefault();
-            });
-
-            document.addEventListener('mousemove', function(e) {
-                if (!isResizing) return;
-
-                // 計算新的寬度和高度
-                const width = originalWidth - (e.clientX - originalX);
-                const height = originalHeight + (e.clientY - originalY);
-
-                // 限制最小和最大尺寸
-                const minWidth = 300;
-                const minHeight = 300;
-                const maxWidth = 800;
-                const maxHeight = window.innerHeight * 0.8;
-
-                // 調整寬度，但保持右側位置固定
-                if (width >= minWidth && width <= maxWidth) {
-                    assistant.style.width = width + 'px';
-                    // 不需要調整 right 值，因為已經在 CSS 中固定為 6vw
-                }
-
-                // 調整高度
-                if (height >= minHeight && height <= maxHeight) {
-                    assistant.style.height = height + 'px';
-                }
-
-                e.preventDefault();
-            });
-
-            document.addEventListener('mouseup', function() {
-                isResizing = false;
-            });
-
-            // 在視窗大小改變時調整最大高度
-            window.addEventListener('resize', function() {
-                const maxHeight = window.innerHeight * 0.8;
-                if (assistant.offsetHeight > maxHeight) {
-                    assistant.style.height = maxHeight + 'px';
-                }
-                // 不需要調整 right 值，因為使用 vw 單位會自動響應視窗大小變化
-            });
-        });
     </script>
     {% block extra_js %}{% endblock %}
 </body>
-</html> 
+</html>
