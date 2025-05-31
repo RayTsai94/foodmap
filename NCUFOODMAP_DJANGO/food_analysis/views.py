@@ -14,6 +14,8 @@ import together
 from dotenv import load_dotenv
 from django.conf import settings
 import re
+from django.http import JsonResponse
+import requests
 
 # 載入環境變數
 load_dotenv()
@@ -764,3 +766,117 @@ def personal_nutrition_dashboard(request):
         'daily_recommendations': daily_recommendations,
         'achievement_rates': achievement_rates,
     })
+
+def ai_nutrition_consultant(request):
+    """全新的AI營養顧問 - 專業營養師互動式諮詢"""
+    conversation_history = request.session.get('nutrition_conversation', [])
+    
+    # 處理AJAX請求
+    if request.method == 'POST':
+        import json
+        try:
+            data = json.loads(request.body)
+            
+            # 處理清除對話
+            if data.get('action') == 'clear_chat':
+                request.session['nutrition_conversation'] = []
+                return JsonResponse({'success': True})
+            
+            user_question = data.get('question', '').strip()
+            
+            if user_question:
+                # 將用戶問題添加到對話歷史
+                conversation_history.append({
+                    'role': 'user',
+                    'content': user_question,
+                    'timestamp': timezone.now().isoformat()
+                })
+                
+                # 生成AI回應
+                ai_response = get_nutrition_consultant_response(user_question, conversation_history)
+                
+                # 將AI回應添加到對話歷史
+                conversation_history.append({
+                    'role': 'assistant',
+                    'content': ai_response,
+                    'timestamp': timezone.now().isoformat()
+                })
+                
+                # 保存對話歷史到session（限制最近20條對話）
+                request.session['nutrition_conversation'] = conversation_history[-20:]
+                
+                return JsonResponse({
+                    'success': True,
+                    'response': ai_response
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': '請輸入您的問題'
+                })
+                
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'發生錯誤：{str(e)}'
+            })
+    
+    # GET請求：顯示頁面
+    return render(request, 'food_analysis/ai_nutrition_consultant.html', {
+        'conversation_history': conversation_history
+    })
+
+def get_nutrition_consultant_response(question, conversation_history):
+    """獲取AI營養顧問的專業回應"""
+    try:
+        # 檢查API密鑰
+        api_key = settings.TOGETHER_API_KEY
+        if not api_key:
+            return "API設定錯誤，請聯繫管理員。"
+        
+        # 清理輸入
+        clean_question = str(question).strip()[:100]  # 限制為100字符
+        if not clean_question:
+            return "請輸入您的問題。"
+        
+        # 使用穩定的Llama模型和最簡單的請求格式
+        request_data = {
+            "model": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+            "messages": [
+                {"role": "user", "content": f"作為營養師，請用繁體中文簡潔回答：{clean_question}"}
+            ],
+            "max_tokens": 200,
+            "temperature": 0.5
+        }
+        
+        # 調用Together AI API
+        response = requests.post(
+            "https://api.together.xyz/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            json=request_data,
+            timeout=25
+        )
+        
+        # 處理回應
+        if response.status_code == 200:
+            try:
+                data = response.json()
+                if 'choices' in data and data['choices']:
+                    content = data['choices'][0]['message']['content']
+                    return content.strip()[:500] if content else "AI營養師暫時無法回應。"
+                return "AI營養師回應格式異常。"
+            except (json.JSONDecodeError, KeyError, IndexError):
+                return "回應解析失敗。"
+        else:
+            # 簡化錯誤處理
+            return f"服務暫時不可用（錯誤{response.status_code}），請稍後再試。"
+            
+    except requests.exceptions.Timeout:
+        return "請求超時，請稍後再試。"
+    except requests.exceptions.ConnectionError:
+        return "網路連接問題，請檢查網路。"
+    except Exception as e:
+        return f"系統錯誤：{str(e)[:50]}"

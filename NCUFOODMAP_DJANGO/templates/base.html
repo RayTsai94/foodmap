@@ -127,7 +127,7 @@
                                 <li><hr class="dropdown-divider"></li>
                                 {% endif %}
                                 <li><a class="dropdown-item" href="{% url 'ai_food_analysis' %}"><i class="fas fa-brain me-2"></i>AI食物分析</a></li>
-                                <li><a class="dropdown-item" href="{% url 'ai_advisor' %}"><i class="fas fa-robot me-2"></i>智能營養顧問</a></li>
+                                <li><a class="dropdown-item" href="{% url 'ai_nutrition_consultant' %}"><i class="fas fa-user-md me-2"></i>AI營養顧問</a></li>
                             </ul>
                         </li>
                         {% if user.is_authenticated %}
@@ -215,7 +215,6 @@
                             {% if user.is_authenticated %}
                             <li><a href="{% url 'personal_food_diary' %}" class="text-light">我的飲食日記</a></li>
                             {% endif %}
-                            <li><a href="{% url 'ai_advisor' %}" class="text-light">智能營養顧問</a></li>
                         </ul>
                     </div>
                     <div class="col-md-4">

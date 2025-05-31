@@ -1,0 +1,495 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI營養顧問 - NCU 食物地圖{% endblock %}
+
+{% block extra_css %}
+<style>
+.consultant-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.chat-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.chat-header {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+}
+
+.chat-header h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.chat-header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.chat-messages {
+    background: white;
+    border-radius: 15px;
+    height: 500px;
+    overflow-y: auto;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.message {
+    margin-bottom: 20px;
+    animation: fadeIn 0.5s ease-in;
+}
+
+.message.user {
+    text-align: right;
+}
+
+.message.assistant {
+    text-align: left;
+}
+
+.message-bubble {
+    display: inline-block;
+    max-width: 80%;
+    padding: 15px 20px;
+    border-radius: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.message.user .message-bubble {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom-right-radius: 5px;
+}
+
+.message.assistant .message-bubble {
+    background: #f8f9fa;
+    color: #333;
+    border-bottom-left-radius: 5px;
+    border-left: 4px solid #28a745;
+}
+
+.message-time {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin-top: 5px;
+}
+
+.chat-input-container {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.chat-input {
+    flex: 1;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 25px;
+    padding: 15px 20px;
+    font-size: 1rem;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    backdrop-filter: blur(10px);
+}
+
+.chat-input::placeholder {
+    color: rgba(255,255,255,0.7);
+}
+
+.chat-input:focus {
+    outline: none;
+    border-color: rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.2);
+}
+
+.send-btn {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.send-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.send-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.feature-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.feature-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.suggestion-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.suggestion-btn {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.suggestion-btn:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-1px);
+}
+
+.typing-indicator {
+    display: none;
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.typing-dots {
+    display: inline-block;
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-radius: 20px;
+    border-bottom-left-radius: 5px;
+}
+
+.typing-dots::after {
+    content: '●●●';
+    animation: typing 1.5s infinite;
+    color: #666;
+}
+
+@keyframes typing {
+    0% { opacity: 0.3; }
+    50% { opacity: 1; }
+    100% { opacity: 0.3; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.clear-chat-btn {
+    background: rgba(220, 53, 69, 0.2);
+    border: 1px solid rgba(220, 53, 69, 0.5);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: 10px;
+}
+
+.clear-chat-btn:hover {
+    background: rgba(220, 53, 69, 0.3);
+}
+
+@media (max-width: 768px) {
+    .chat-container {
+        padding: 20px;
+        margin: 10px;
+        border-radius: 15px;
+    }
+    
+    .chat-header h1 {
+        font-size: 2rem;
+    }
+    
+    .chat-messages {
+        height: 400px;
+    }
+    
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="consultant-container">
+    <!-- 功能介紹區域 -->
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🥗</div>
+            <h4>個人化飲食建議</h4>
+            <p>根據您的健康狀況、目標和喜好，提供量身定制的飲食方案和營養建議。</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💪</div>
+            <h4>運動營養指導</h4>
+            <p>專業的運動前後飲食指導，幫助您達到健身、減脂、增肌等目標。</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🩺</div>
+            <h4>健康管理諮詢</h4>
+            <p>針對糖尿病、高血壓等疾病的飲食調理建議，促進健康恢復。</p>
+        </div>
+    </div>
+
+    <!-- 聊天界面 -->
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🤖 AI營養顧問</h1>
+            <p>您的專屬營養師，隨時為您解答營養健康問題</p>
+        </div>
+
+        <!-- 對話記錄 -->
+        <div class="chat-messages" id="chatMessages">
+            {% if not conversation_history %}
+            <div class="message assistant">
+                <div class="message-bubble">
+                    👋 您好！我是您的AI營養顧問，擁有專業的營養學知識。<br><br>
+                    我可以為您提供：<br>
+                    • 個人化飲食建議<br>
+                    • 減重增肌指導<br>
+                    • 疾病飲食調理<br>
+                    • 運動營養規劃<br>
+                    • 食物搭配建議<br><br>
+                    請隨時向我提問，我會根據您的具體情況給出專業建議！
+                </div>
+            </div>
+            {% else %}
+                {% for msg in conversation_history %}
+                <div class="message {{ msg.role }}">
+                    <div class="message-bubble">
+                        {{ msg.content|linebreaks }}
+                    </div>
+                    <div class="message-time">
+                        {{ msg.timestamp|date:"H:i" }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- 輸入等待提示 -->
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots"></div>
+        </div>
+
+        <!-- 建議問題按鈕 -->
+        <div class="suggestion-buttons">
+            <button class="suggestion-btn" onclick="askSuggestion('我想減肥，應該怎麼吃？')">減肥飲食建議</button>
+            <button class="suggestion-btn" onclick="askSuggestion('如何增肌？需要吃什麼？')">增肌營養指導</button>
+            <button class="suggestion-btn" onclick="askSuggestion('糖尿病患者飲食注意事項')">疾病飲食調理</button>
+            <button class="suggestion-btn" onclick="askSuggestion('運動前後應該怎麼吃？')">運動營養</button>
+            <button class="suggestion-btn" onclick="askSuggestion('素食者如何確保營養均衡？')">素食營養</button>
+            <button class="clear-chat-btn" onclick="clearChat()">清除對話</button>
+        </div>
+
+        <!-- 輸入區域 -->
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="questionInput" 
+                   placeholder="請輸入您的營養健康問題..." 
+                   maxlength="500">
+            <button class="send-btn" id="sendBtn" onclick="sendQuestion()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 免責聲明 -->
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>重要提醒：</strong>AI營養顧問提供的建議僅供參考，不能替代專業醫療診斷。如有嚴重健康問題，請諮詢合格的醫生或營養師。
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const questionInput = document.getElementById('questionInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const chatMessages = document.getElementById('chatMessages');
+    const typingIndicator = document.getElementById('typingIndicator');
+
+    // Enter鍵發送
+    questionInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendQuestion();
+        }
+    });
+
+    // 自動調整聊天區域到底部
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // 初始化時滾動到底部
+    scrollToBottom();
+});
+
+function askSuggestion(question) {
+    document.getElementById('questionInput').value = question;
+    sendQuestion();
+}
+
+function clearChat() {
+    if (confirm('確定要清除所有對話記錄嗎？')) {
+        fetch('/food_analysis/ai-nutrition-consultant/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                action: 'clear_chat'
+            })
+        })
+        .then(() => {
+            location.reload();
+        });
+    }
+}
+
+async function sendQuestion() {
+    const questionInput = document.getElementById('questionInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const chatMessages = document.getElementById('chatMessages');
+    const typingIndicator = document.getElementById('typingIndicator');
+    
+    const question = questionInput.value.trim();
+    
+    if (!question) {
+        alert('請輸入您的問題');
+        return;
+    }
+
+    // 禁用輸入和按鈕
+    questionInput.disabled = true;
+    sendBtn.disabled = true;
+    
+    // 添加用戶消息
+    addMessage('user', question);
+    questionInput.value = '';
+    
+    // 顯示輸入提示
+    typingIndicator.style.display = 'block';
+    scrollToBottom();
+
+    try {
+        const response = await fetch('/food_analysis/ai-nutrition-consultant/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                question: question
+            })
+        });
+
+        const data = await response.json();
+        
+        // 隱藏輸入提示
+        typingIndicator.style.display = 'none';
+
+        if (data.success) {
+            addMessage('assistant', data.response);
+        } else {
+            addMessage('assistant', `抱歉，發生錯誤：${data.error}`);
+        }
+    } catch (error) {
+        typingIndicator.style.display = 'none';
+        addMessage('assistant', '抱歉，網路連接有問題，請稍後再試。');
+    } finally {
+        // 重新啟用輸入和按鈕
+        questionInput.disabled = false;
+        sendBtn.disabled = false;
+        questionInput.focus();
+    }
+}
+
+function addMessage(role, content) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${role}`;
+    
+    const now = new Date();
+    const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                      now.getMinutes().toString().padStart(2, '0');
+    
+    messageDiv.innerHTML = `
+        <div class="message-bubble">
+            ${content.replace(/\n/g, '<br>')}
+        </div>
+        <div class="message-time">
+            ${timeString}
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %} 
