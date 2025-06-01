@@ -10,10 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# 判斷是否在 Render 環境中
+IS_RENDER = os.environ.get('RENDER', False)
 
 
 # Quick-start development settings - unsuitable for production
@@ -136,6 +140,29 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Media files configuration
+if IS_RENDER:
+    MEDIA_ROOT = '/opt/render/project/src/media/'  # Render 的持久化存儲路徑
+else:
+    MEDIA_ROOT = BASE_DIR / 'media'  # 本地開發環境的路徑
+
+MEDIA_URL = '/media/'
+
+# Storage configuration
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {
+            "location": MEDIA_ROOT,
+            "base_url": MEDIA_URL,
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
