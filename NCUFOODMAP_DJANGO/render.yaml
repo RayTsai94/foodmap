@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: ncufoodmap
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn ncufoodmap_backend.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: DATABASE_URL
+        value: sqlite3:///db.sqlite3
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: TOGETHER_API_KEY
+        sync: false
+      - key: WEB_CONCURRENCY
+        value: 4
+      - key: DJANGO_SETTINGS_MODULE
+        value: ncufoodmap_backend.settings
+    autoDeploy: true 

@@ -12,14 +12,13 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import os
 from dotenv import load_dotenv
+from pathlib import Path
 
 load_dotenv()  # 讀取 .env
 
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 SECRET_KEY = os.getenv("SECRET_KEY")
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
-
-from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,12 +28,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-fuu%f*!zbo3=x59j#!5@=hp8z=hy84)=txwn^c!bq(_u8q#&*6'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fuu%f*!zbo3=x59j#!5@=hp8z=hy84)=txwn^c!bq(_u8q#&*6')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
+# 安全設定
+SECURE_SSL_REDIRECT = os.getenv('DJANGO_ENV', 'development') == 'production'
+SESSION_COOKIE_SECURE = os.getenv('DJANGO_ENV', 'development') == 'production'
+CSRF_COOKIE_SECURE = os.getenv('DJANGO_ENV', 'development') == 'production'
 
 
 # Application definition
@@ -91,6 +95,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'ncufoodmap_backend.urls'
@@ -160,6 +166,7 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
@@ -181,8 +188,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # API金鑰設定
-GOOGLE_MAPS_API_KEY = 'AIzaSyDL2GxWv1UIG0Iu-ja_55FlIT5Bcd9S2MA'
-TOGETHER_API_KEY = '3a1de39e3c6be2425f3e251c3271bca622b8f0156c3a9fa25f78149d05a1c5dd'
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY', 'AIzaSyDL2GxWv1UIG0Iu-ja_55FlIT5Bcd9S2MA')
+TOGETHER_API_KEY = os.getenv('TOGETHER_API_KEY', '3a1de39e3c6be2425f3e251c3271bca622b8f0156c3a9fa25f78149d05a1c5dd')
 
 # 認證後端設定
 AUTHENTICATION_BACKENDS = (
@@ -227,3 +234,6 @@ LOGGING = {
         },
     },
 }
+
+# Whitenoise 設定
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
