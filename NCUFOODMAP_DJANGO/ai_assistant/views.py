@@ -261,22 +261,24 @@ def chat(request):
 def get_chat_history(request):
     """獲取用戶的聊天歷史記錄"""
     try:
-        # 獲取最近的5組對話
+        # 獲取最近的10組對話
         history = ChatHistory.objects.filter(
             user=request.user if request.user.is_authenticated else None,
             session_id=request.session.session_key
-        ).order_by('-created_at')[:10]  # 獲取最近的10條消息（5組對話）
+        ).order_by('-created_at')[:10]  # 獲取最近的10條消息
         
         # 將查詢結果轉換為列表並反轉順序（讓最早的消息在前）
         messages = []
         for chat in reversed(list(history)):
             messages.append({
                 'type': 'user',
-                'content': chat.message
+                'content': chat.message,
+                'timestamp': chat.created_at.strftime('%Y-%m-%d %H:%M:%S')
             })
             messages.append({
                 'type': 'assistant',
-                'content': chat.response
+                'content': chat.response,
+                'timestamp': chat.created_at.strftime('%Y-%m-%d %H:%M:%S')
             })
             
         return JsonResponse({'messages': messages})

@@ -65,11 +65,40 @@
     margin-bottom: 12px;
     line-height: 1.6;
 }
+.message-time {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+    padding: 0 8px;
+    display: block;
+    clear: both;
+}
 .ai-message.user {
     text-align: right;
 }
+.ai-message.user .message-time {
+    text-align: right;
+    padding-right: 16px;
+}
 .ai-message.assistant {
     text-align: left;
+}
+.ai-message.assistant .message-time {
+    text-align: left;
+    padding-left: 16px;
+}
+.message-bubble {
+    display: inline-block;
+    max-width: 80%;
+    padding: 8px 16px;
+    border-radius: 12px;
+    background-color: #f0f0f0;
+    word-wrap: break-word;
+    margin-bottom: 4px;
+}
+.ai-message.user .message-bubble {
+    background-color: #007bff;
+    color: white;
 }
 #ai-assistant-input-row {
     display: flex;
@@ -126,23 +155,78 @@
     function scrollToBottom() {
         messages.scrollTop = messages.scrollHeight;
     }
-    function appendMessage(type, text) {
+
+    function appendMessage(type, text, timestamp = '') {
         const div = document.createElement('div');
         div.className = 'ai-message ' + type;
-        div.textContent = text;
+        
+        // 如果沒有提供時間戳，使用當前時間
+        if (!timestamp) {
+            const now = new Date();
+            timestamp = now.toLocaleString('zh-TW', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
+        div.innerHTML = `
+            <div class="message-bubble">${text}</div>
+            <div class="message-time">${timestamp}</div>
+        `;
         messages.appendChild(div);
         scrollToBottom();
     }
+
+    async function loadChatHistory() {
+        try {
+            const response = await fetch('/ai_assistant/history/');
+            const data = await response.json();
+            
+            if (data.messages && data.messages.length > 0) {
+                messages.innerHTML = ''; // 清空現有消息
+                data.messages.forEach(msg => {
+                    appendMessage(msg.type, msg.content, msg.timestamp);
+                });
+            } else {
+                // 如果沒有歷史記錄，顯示歡迎訊息
+                const welcomeMessage = getWelcomeMessage();
+                messages.innerHTML = `<div class="ai-message assistant">
+                    <div class="message-bubble">${welcomeMessage}</div>
+                    <div class="message-time">${new Date().toLocaleString('zh-TW', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    })}</div>
+                </div>`;
+            }
+        } catch (error) {
+            console.error('載入歷史記錄失敗:', error);
+            const welcomeMessage = getWelcomeMessage();
+            const currentTime = new Date().toLocaleString('zh-TW', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            messages.innerHTML = `<div class="ai-message assistant">
+                <div class="message-bubble">${welcomeMessage}</div>
+                <div class="message-time">${currentTime}</div>
+            </div>`;
+        }
+    }
+
     function setThinking() {
         appendMessage('assistant', '思考中...');
         scrollToBottom();
     }
+
     function removeThinking() {
         const all = messages.querySelectorAll('.ai-message.assistant');
         if (all.length > 0 && all[all.length-1].textContent === '思考中...') {
             all[all.length-1].remove();
         }
     }
+
     function sendMessage() {
         const text = input.value.trim();
         if (!text) return;
@@ -242,8 +326,8 @@
     toggleBtn.onclick = function() {
         isOpen = !isOpen;
         panel.style.display = isOpen ? 'block' : 'none';
-        if (isOpen && messages.children.length === 0) {
-            initializeMessages();
+        if (isOpen) {
+            loadChatHistory();
         }
     };
     sendBtn.onclick = sendMessage;
