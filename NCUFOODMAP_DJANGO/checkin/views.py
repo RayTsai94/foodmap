@@ -139,16 +139,22 @@ def user_ranking(request):
     from django.db.models import Count
     from django.utils import timezone
     now = timezone.now()
+    
+    # 獲取本月的打卡排行榜
+    user_ranking = User.objects.annotate(
+        checkin_count=Count(
+            'checkins',
+            filter=models.Q(
+                checkins__date__year=now.year,
+                checkins__date__month=now.month
+            )
+        )
+    ).filter(checkin_count__gt=0).order_by('-checkin_count')[:10]
+
+    # 更新快取
     cache_key = f"user_ranking_{now.year}_{now.month}"
-    data = cache.get(cache_key)
-    if not data:
-        user_ranking = User.objects.annotate(
-            checkin_count=Count('checkins', filter=models.Q(checkins__date__year=now.year, checkins__date__month=now.month))
-        ).order_by('-checkin_count')[:10]
-        data = list(user_ranking)
-        cache.set(cache_key, data, 300)
-    else:
-        user_ranking = data
+    cache.set(cache_key, list(user_ranking), 300)  # 快取 5 分鐘
+
     return render(request, 'checkin/user_ranking.html', {'user_ranking': user_ranking})
 
 @login_required
@@ -156,20 +162,23 @@ def restaurant_ranking(request):
     from django.db.models import Count, Avg
     from django.utils import timezone
     now = timezone.now()
+    
+    # 獲取本月的餐廳排行榜
+    top_rated = Checkin.objects.filter(
+        date__year=now.year,
+        date__month=now.month,
+        rating__gte=1  # 只計算有效分數
+    ).values('restaurant_name').annotate(
+        avg_rating=Avg('rating'),
+        count=Count('id')  # 計算打卡次數
+    ).filter(
+        count__gte=1  # 至少有1次打卡
+    ).order_by('-avg_rating', '-count')[:10]  # 先按評分排序，評分相同則按打卡次數排序
+
+    # 更新快取
     cache_key = f"restaurant_ranking_{now.year}_{now.month}"
-    data = cache.get(cache_key)
-    if not data:
-        top_rated = Checkin.objects.filter(
-            date__year=now.year,
-            date__month=now.month,
-            rating__gte=1  # 只計算有效分數
-        ).values('restaurant_name').annotate(
-            avg_rating=Avg('rating'), count=Count('id')
-        ).filter(count__gte=2).order_by('-avg_rating')[:10]
-        data = list(top_rated)
-        cache.set(cache_key, data, 300)
-    else:
-        top_rated = data
+    cache.set(cache_key, list(top_rated), 300)  # 快取 5 分鐘
+
     return render(request, 'checkin/restaurant_ranking.html', {'top_rated': top_rated})
 
 @login_required

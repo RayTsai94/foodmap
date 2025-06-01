@@ -339,82 +339,14 @@ let infoWindow;
 
 const restaurants = {{ restaurant_json|safe }};
 
-function initRestaurantMap() {
-    // 設置中央大學的座標位置
-    const ncuLocation = { lat: 24.9677, lng: 121.1892 };
-    
-    // 創建地圖
-    map = new google.maps.Map(document.getElementById('restaurant-map'), {
-        center: ncuLocation,
-        zoom: 15,
-        styles: [
-            {
-                "featureType": "poi.business",
-                "elementType": "labels",
-                "stylers": [{"visibility": "off"}]
-            }
-        ]
-    });
-    
-    // 創建信息窗口
-    infoWindow = new google.maps.InfoWindow();
-    
-    // 添加中央大學標記
-    const ncuMarker = new google.maps.Marker({
-        position: ncuLocation,
-        map: map,
-        title: '國立中央大學',
-        icon: {
-            url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-        },
-        zIndex: 999
-    });
-    
-    // 添加餐廳標記
-    restaurants.forEach(restaurant => {
-        const marker = new google.maps.Marker({
-            position: { lat: restaurant.lat, lng: restaurant.lng },
-            map: map,
-            title: restaurant.name,
-            icon: {
-                url: "{% static 'images/logo.png' %}",
-                scaledSize: new google.maps.Size(40, 40),
-            }
-        });
-        
-        const infoContent = `
-            <div class="map-info-window">
-                <img src="${restaurant.image}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;">
-                <h6 class="fw-bold text-primary">${restaurant.name}</h6>
-                <p class="small text-muted mb-2">
-                    <i class="fas fa-map-marker-alt me-1"></i>${restaurant.address}
-                </p>
-                <p class="small mb-2">
-                    <i class="fas fa-tags me-1"></i>${restaurant.categories}
-                </p>
-                <a href="${restaurant.url}" class="btn btn-primary btn-sm w-100">
-                    <i class="fas fa-eye me-1"></i>查看詳情
-                </a>
-            </div>
-        `;
-        
-        marker.addListener('click', () => {
-            infoWindow.setContent(infoContent);
-            infoWindow.open(map, marker);
-        });
-        
-        markers.push(marker);
-    });
-    
-    // 如果有餐廳，調整地圖視野以包含所有餐廳
-    if (restaurants.length > 0) {
-        const bounds = new google.maps.LatLngBounds();
-        restaurants.forEach(restaurant => {
-            bounds.extend(new google.maps.LatLng(restaurant.lat, restaurant.lng));
-        });
-        bounds.extend(ncuLocation); // 也包含中央大學
-        map.fitBounds(bounds);
-    }
+// 保存視圖狀態到 localStorage
+function saveViewPreference(isMapView) {
+    localStorage.setItem('restaurantViewPreference', isMapView ? 'map' : 'list');
+}
+
+// 從 localStorage 獲取視圖狀態
+function getViewPreference() {
+    return localStorage.getItem('restaurantViewPreference') || 'map';
 }
 
 function showMapView() {
@@ -422,11 +354,10 @@ function showMapView() {
     document.getElementById('list-section').style.display = 'none';
     document.getElementById('map-view-btn').classList.add('active');
     document.getElementById('list-view-btn').classList.remove('active');
-    
-    // 重新調整地圖大小
     if (map) {
         google.maps.event.trigger(map, 'resize');
     }
+    saveViewPreference(true);
 }
 
 function showListView() {
@@ -434,7 +365,71 @@ function showListView() {
     document.getElementById('list-section').style.display = 'block';
     document.getElementById('map-view-btn').classList.remove('active');
     document.getElementById('list-view-btn').classList.add('active');
+    saveViewPreference(false);
 }
+
+// 初始化地圖
+function initRestaurantMap() {
+    const mapOptions = {
+        center: { lat: 24.9684, lng: 121.1952 },  // 中央大學的座標
+        zoom: 15,
+        styles: [
+            {
+                featureType: "poi.business",
+                stylers: [{ visibility: "off" }]
+            }
+        ]
+    };
+    
+    map = new google.maps.Map(document.getElementById('restaurant-map'), mapOptions);
+    infoWindow = new google.maps.InfoWindow();
+    
+    // 添加餐廳標記
+    restaurants.forEach(restaurant => {
+        if (restaurant.lat && restaurant.lng) {
+            const marker = new google.maps.Marker({
+                position: { lat: parseFloat(restaurant.lat), lng: parseFloat(restaurant.lng) },
+                map: map,
+                title: restaurant.name
+            });
+            
+            marker.addListener('click', () => {
+                const content = `
+                    <div class="info-window">
+                        <h5>${restaurant.name}</h5>
+                        <p><i class="fas fa-tag"></i> ${restaurant.categories}</p>
+                        <p><i class="fas fa-map-marker-alt"></i> ${restaurant.address}</p>
+                        <a href="${restaurant.url}" class="btn btn-primary btn-sm">查看詳情</a>
+                    </div>
+                `;
+                infoWindow.setContent(content);
+                infoWindow.open(map, marker);
+            });
+            
+            markers.push(marker);
+        }
+    });
+    
+    // 根據用戶偏好設置初始視圖
+    const viewPreference = getViewPreference();
+    if (viewPreference === 'list') {
+        showListView();
+    } else {
+        showMapView();
+    }
+}
+
+// 頁面載入完成後初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 如果不是通過地圖回調加載的，則手動初始化
+    if (typeof google === 'undefined') {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initRestaurantMap`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+    }
+});
 
 // 搜索建議功能
 let searchTimeout;

@@ -240,13 +240,18 @@ def chat(request):
         if not message:
             return JsonResponse({'error': '請輸入訊息'}, status=400)
         
+        # 確保 session_id 存在
+        if not request.session.session_key:
+            request.session.create()
+        session_id = request.session.session_key
+        
         # 獲取AI回應
         response = get_ai_response(message, current_page)
         
         # 保存對話歷史
         ChatHistory.objects.create(
             user=request.user if request.user.is_authenticated else None,
-            session_id=request.session.session_key or '',
+            session_id=session_id,
             message=message,
             response=response,
             current_page=current_page
@@ -261,11 +266,21 @@ def chat(request):
 def get_chat_history(request):
     """獲取用戶的聊天歷史記錄"""
     try:
-        # 獲取最近的10組對話
-        history = ChatHistory.objects.filter(
-            user=request.user if request.user.is_authenticated else None,
-            session_id=request.session.session_key
-        ).order_by('-created_at')[:10]  # 獲取最近的10條消息
+        # 確保 session_id 存在
+        if not request.session.session_key:
+            request.session.create()
+        session_id = request.session.session_key
+
+        # 如果用戶已登入，獲取該用戶的所有對話
+        # 如果未登入，獲取當前 session 的對話
+        if request.user.is_authenticated:
+            history = ChatHistory.objects.filter(
+                user=request.user
+            ).order_by('-created_at')[:10]
+        else:
+            history = ChatHistory.objects.filter(
+                session_id=session_id
+            ).order_by('-created_at')[:10]
         
         # 將查詢結果轉換為列表並反轉順序（讓最早的消息在前）
         messages = []

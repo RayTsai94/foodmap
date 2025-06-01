@@ -216,14 +216,24 @@
     }
 
     function setThinking() {
-        appendMessage('assistant', '思考中...');
+        const thinkingDiv = document.createElement('div');
+        thinkingDiv.className = 'ai-message assistant thinking';
+        thinkingDiv.innerHTML = `
+            <div class="message-bubble">思考中...</div>
+            <div class="message-time">${new Date().toLocaleString('zh-TW', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            })}</div>
+        `;
+        messages.appendChild(thinkingDiv);
         scrollToBottom();
     }
 
     function removeThinking() {
-        const all = messages.querySelectorAll('.ai-message.assistant');
-        if (all.length > 0 && all[all.length-1].textContent === '思考中...') {
-            all[all.length-1].remove();
+        const thinkingMsg = messages.querySelector('.ai-message.assistant.thinking');
+        if (thinkingMsg) {
+            thinkingMsg.remove();
         }
     }
 
@@ -246,12 +256,14 @@
         })
         .then(res => res.json())
         .then(data => {
-            removeThinking();
             if (data.response) {
+                removeThinking();
                 appendMessage('assistant', data.response);
             } else if (data.error) {
+                removeThinking();
                 appendMessage('assistant', '抱歉，發生錯誤：' + data.error);
             } else {
+                removeThinking();
                 appendMessage('assistant', '抱歉，AI 沒有回應。');
             }
         })

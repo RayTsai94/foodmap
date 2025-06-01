@@ -149,16 +149,15 @@
                             <a class="nav-link" href="{% url 'ai_recommendation:index' %}">AI 推薦</a>
                         </li>
                     </ul>
-                    <form class="d-flex me-2 search-container" action="{% url 'restaurant_list' %}" method="get">
+                    <!-- 搜尋欄 -->
+                    <form class="d-flex me-3" id="searchForm" onsubmit="searchLocation(event)">
                         <div class="input-group">
-                            <input class="form-control" type="search" placeholder="搜尋餐廳" name="name_or_address">
-                            <button class="btn btn-outline-light" type="submit">
+                            <input type="text" id="searchInput" class="form-control" placeholder="搜尋餐廳..." aria-label="搜尋餐廳">
+                            <button class="btn btn-primary" type="submit">
                                 <i class="fas fa-search"></i>
                             </button>
                         </div>
                     </form>
-                    
-                    <!-- 用戶登入/註冊區域 -->
                     <div class="user-container">
                     {% if user.is_authenticated %}
                         <div class="dropdown">
@@ -172,9 +171,6 @@
                                     <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
                                     <small class="text-muted">{{ user.email }}</small>
                                 </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'home' %}"><i class="fas fa-user me-2"></i>個人資料</a></li>
-                                <li><a class="dropdown-item" href="{% url 'home' %}"><i class="fas fa-history me-2"></i>收藏餐廳</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'googleOauth:logout' %}"><i class="fas fa-sign-out-alt me-2"></i>登出</a></li>
                                 <li>
@@ -234,9 +230,9 @@
     </div>
 
     <!-- 回到頂部按鈕 -->
-    <div id="back-to-top">
+    <button id="back-to-top" class="btn btn-primary rounded-circle">
         <i class="fas fa-arrow-up"></i>
-    </div>
+    </button>
 
     {# 保留新版浮動AI助手 #}
     {% include 'ai_assistant/assistant_widget.html' %}
@@ -265,6 +261,34 @@
                 });
             });
         });
+    </script>
+
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
+
+    <!-- 搜尋功能 JavaScript -->
+    <script>
+    function searchLocation(event) {
+        event.preventDefault();
+        const searchInput = document.getElementById('searchInput').value;
+        
+        // 使用 Google Maps Places API 搜尋地點
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({
+            address: searchInput + ' 中央大學',  // 加上中央大學來限制搜尋範圍
+            region: 'tw'  // 限制在台灣範圍內搜尋
+        }, function(results, status) {
+            if (status === 'OK') {
+                const location = results[0].geometry.location;
+                // 構建 Google Maps 網址
+                const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(searchInput)}/@${location.lat()},${location.lng()},15z`;
+                // 在新分頁中打開 Google Maps
+                window.open(mapsUrl, '_blank');
+            } else {
+                alert('找不到該地點，請重試。');
+            }
+        });
+    }
     </script>
     {% block extra_js %}{% endblock %}
 </body>
