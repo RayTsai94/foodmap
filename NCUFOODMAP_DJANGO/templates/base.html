@@ -238,23 +238,6 @@
         <i class="fas fa-arrow-up"></i>
     </div>
 
-    {# 移除舊AI助手聊天按鈕與聊天界面 #}
-    {#
-    <button id="chat-toggle" type="button" onclick="toggleChat()">
-        <i class="fas fa-robot"></i>
-    </button>
-    <div id="ai-assistant"> ... </div>
-    #}
-
-    {# 移除舊AI助手相關JS #}
-    {#
-    // AI助手相關功能
-    function toggleChat() { ... }
-    async function loadChatHistory() { ... }
-    document.getElementById('chat-input').addEventListener('keypress', function(e) { ... });
-    async function sendMessage() { ... }
-    #}
-
     {# 保留新版浮動AI助手 #}
     {% include 'ai_assistant/assistant_widget.html' %}
 
