@@ -4,10 +4,12 @@ services:
     env: python
     rootDir: NCUFOODMAP_DJANGO
     buildCommand: pip install -r requirements.txt
-    startCommand: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn ncufoodmap_backend.wsgi:application
+    startCommand: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn ncufoodmap_backend.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
+      - key: PORT
+        value: 10000
       - key: DATABASE_URL
         value: sqlite3:///db.sqlite3
       - key: SECRET_KEY
