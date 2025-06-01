@@ -61,7 +61,7 @@
         /* 回到頂部按鈕樣式 */
         #back-to-top {
             position: fixed;
-            bottom: 5vh;
+            bottom: 12vh;
             right: 2vw;
             display: none;
             width: 50px;
@@ -70,10 +70,12 @@
             background-color: rgba(0, 0, 0, 0.5);
             color: white;
             text-align: center;
-            line-height: 50px;
             cursor: pointer;
             z-index: 1000;
             transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         #back-to-top:hover {
@@ -148,6 +150,39 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'ai_recommendation:index' %}">AI 推薦</a>
                         </li>
+                        {% if user.is_authenticated %}
+                        <!-- 手機版用戶資訊 -->
+                        <li class="nav-item d-lg-none">
+                            <hr class="dropdown-divider">
+                            <div class="d-flex align-items-center px-3 py-2">
+                                <img src="{% if user.socialaccount_set.all.0.get_avatar_url %}{{ user.socialaccount_set.all.0.get_avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username }}&background=random{% endif %}" 
+                                     alt="{{ user.username }}" 
+                                     class="user-avatar me-2">
+                                <div>
+                                    <div class="text-light fw-bold">{{ user.get_full_name|default:user.username }}</div>
+                                    <small class="text-light-50">{{ user.email }}</small>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="nav-item d-lg-none">
+                            <a class="nav-link text-danger" href="{% url 'delete_account' %}">
+                                <i class="fas fa-trash-alt me-2"></i>刪除帳戶
+                            </a>
+                        </li>
+                        <li class="nav-item d-lg-none">
+                            <a class="nav-link" href="{% url 'googleOauth:logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i>登出
+                            </a>
+                        </li>
+                        {% else %}
+                        <!-- 手機版登入按鈕 -->
+                        <li class="nav-item d-lg-none">
+                            <hr class="dropdown-divider">
+                            <a class="nav-link" href="{% url 'googleOauth:login' %}">
+                                <i class="fas fa-sign-in-alt me-2"></i>登入/註冊
+                            </a>
+                        </li>
+                        {% endif %}
                     </ul>
                     <!-- 搜尋欄 -->
                     <form class="d-flex me-3" id="searchForm" onsubmit="searchLocation(event)">
