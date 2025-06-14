@@ -10,81 +10,382 @@
         min-height: calc(100vh - 200px); /* 確保頁面有足夠高度 */
     }
     
+    .search-container {
+        height: 520px;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 20px;
+    }
+    
+    .search-container .card {
+        flex: 1;
+        margin-bottom: 0;
+    }
+    
+    .search-container .card-body {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        padding: 2rem;
+    }
+    
+    .search-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+    }
+    
+    .search-header {
+        margin-bottom: 2rem;
+    }
+    
+    .search-examples {
+        margin: 2rem 0;
+    }
+    
+    .search-examples ul {
+        margin-bottom: 0;
+        padding-left: 1.2rem;
+    }
+    
+    .search-alert {
+        margin: 2rem 0;
+    }
+    
+    .search-input-group {
+        margin-top: auto;
+    }
+    
     #map {
-        height: 600px;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        height: 520px;
+        border-radius: 18px;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.13);
+        margin-bottom: 16px;
+    }
+    
+    /* 推薦結果的新樣式 */
+    .recommendations-section {
+        position: relative;
+        margin-top: 30px;
+        padding: 0 50px;
+    }
+    
+    .recommendations-row {
+        display: flex;
+        gap: 20px;
+        overflow-x: hidden;
+        scroll-behavior: smooth;
+    }
+    
+    .recommendation-card {
+        flex: 0 0 300px;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.13);
+        margin-bottom: 28px;
+        transition: all 0.3s ease;
+        border: none;
+        opacity: 0;
+        transform: translateY(40px);
+        background: #ffffff;
+        border: 1px solid #e8e8e8;
+    }
+    
+    .recommendation-card.animated {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .recommendation-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .recommendation-card .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+    
+    .recommendation-card .card-subtitle {
+        color: #64748b;
+        margin-bottom: 1rem;
+    }
+    
+    .recommendation-card .card-text {
+        color: #475569;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+    
+    .recommendation-card .btn-outline-primary {
+        margin-top: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        width: 100%;
+        background: #f8fafc;
+        border-color: #e2e8f0;
+        color: #3b82f6;
+    }
+    
+    .recommendation-card .btn-outline-primary:hover {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+        transform: translateY(-2px);
+    }
+    
+    .recommendation-card .badge {
+        padding: 0.5em 0.8em;
+        font-weight: 500;
+    }
+    
+    .recommendation-card .badge.bg-warning {
+        background-color: #fbbf24 !important;
+        color: #92400e !important;
+    }
+    
+    .recommendation-card .badge.bg-primary {
+        background-color: #3b82f6 !important;
+        color: white !important;
+    }
+    
+    .recommendation-card .badge.bg-secondary {
+        background-color: #64748b !important;
+        color: white !important;
+    }
+    
+    .recommendation-card:hover {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+        transform: translateY(-5px);
+        border-color: #3b82f6;
+    }
+    
+    .recommendation-card .restaurant-image {
+        height: 200px;
+        width: 100%;
+        object-fit: cover;
+        border-radius: 16px 16px 0 0;
+    }
+    
+    .recommendation-card i {
+        width: 20px;
+        text-align: center;
+        margin-right: 8px;
+    }
+    
+    .recommendation-card i.fa-map-marker-alt {
+        color: #ef4444;
+    }
+    
+    .recommendation-card i.fa-globe {
+        color: #3b82f6;
+    }
+    
+    .recommendation-card i.fa-lightbulb {
+        color: #f59e0b;
+    }
+    
+    .recommendation-card a {
+        color: #3b82f6;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+    
+    .recommendation-card a:hover {
+        color: #2563eb;
+        text-decoration: underline;
+    }
+    
+    .nav-button {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 40px;
+        height: 40px;
+        background: rgba(0, 0, 0, 0.6);
+        border: none;
+        border-radius: 50%;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-button:hover {
+        background: rgba(0, 0, 0, 0.8);
+    }
+    
+    .nav-button.prev {
+        left: 0;
+    }
+    
+    .nav-button.next {
+        right: 0;
+    }
+    
+    .nav-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
     
     @media (max-width: 768px) {
+        .search-container,
         #map {
-            height: 400px;
+            height: 320px;
         }
         
-        .ai-recommendation-container {
-            min-height: auto;
+        .search-container .card-body {
+            padding: 1rem;
+        }
+        
+        .search-header {
+            margin-bottom: 1rem;
+        }
+        
+        .search-examples {
+            margin: 1rem 0;
+        }
+        
+        .search-alert {
+            margin: 1rem 0;
+        }
+        
+        .recommendation-card {
+            flex: 0 0 250px;
+        }
+        
+        .recommendation-card .card-body {
+            padding: 1rem;
+        }
+        
+        .recommendations-section {
+            padding: 0 40px;
         }
     }
+
+    .recommendation-card .links-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .recommendation-card .link-item {
+        flex: 1;
+        text-align: center;
+        padding: 8px;
+        border-radius: 8px;
+        background: #f8fafc;
+        color: #3b82f6;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .recommendation-card .link-item:hover {
+        background: #3b82f6;
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+    }
+
+    .recommendation-card .link-item i {
+        margin-right: 4px;
+    }
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 {% endblock %}
 
 {% block content %}
 <div class="ai-recommendation-container">
     <div class="row">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">AI 餐廳推薦</h5>
-                    <p class="card-text text-muted">輸入您的需求，讓 AI 為您推薦中央大學附近 <strong class="text-primary">5公里內</strong> 的餐廳。例如：</p>
-                    <ul class="text-muted small">
-                        <li>想吃辣的</li>
-                        <li>便宜的日本料理</li>
-                        <li>適合約會的餐廳</li>
-                        <li>有素食選擇的餐廳</li>
-                    </ul>
-                    <div class="alert alert-info small" role="alert">
-                        <i class="fas fa-info-circle me-1"></i>
-                        搜尋範圍：中央大學周圍5公里內的餐廳，結果會按距離排序並顯示店家照片
+        <div class="col-md-6">
+            <div class="search-container">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="search-content">
+                            <div class="search-header">
+                                <h5 class="card-title">AI 餐廳推薦</h5>
+                                <p class="card-text text-muted mb-0">輸入您的需求，讓 AI 為您推薦中央大學附近 <strong class="text-primary">5公里內</strong> 的餐廳。例如：</p>
+                            </div>
+
+                            <div class="search-examples">
+                                <ul class="text-muted small">
+                                    <li>想吃辣的</li>
+                                    <li>便宜的日本料理</li>
+                                    <li>適合約會的餐廳</li>
+                                    <li>有素食選擇的餐廳</li>
+                                </ul>
+                            </div>
+
+                            <div class="search-alert">
+                                <div class="alert alert-info small mb-0" role="alert">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    搜尋範圍：中央大學周圍5公里內的餐廳，結果會按距離排序並顯示店家照片
+                                </div>
+                            </div>
+
+                            <div class="search-input-group">
+                                <div class="form-group mb-3">
+                                    <input type="text" class="form-control" id="searchQuery" placeholder="輸入您的需求">
+                                </div>
+                                <button class="btn btn-primary w-100" id="searchButton" onclick="getRecommendation()">
+                                    <span class="normal-text">取得推薦</span>
+                                    <span class="loading-text d-none">
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        處理中...
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <input type="text" class="form-control" id="searchQuery" placeholder="輸入您的需求">
-                    </div>
-                    <button class="btn btn-primary mt-3" id="searchButton" onclick="getRecommendation()">
-                        <span class="normal-text">取得推薦</span>
-                        <span class="loading-text d-none">
-                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                            處理中...
-                        </span>
-                    </button>
                 </div>
             </div>
             <div id="errorAlert" class="alert alert-danger mt-3 d-none" role="alert">
             </div>
-            <div id="recommendationResults" class="mt-4">
-                <!-- 推薦結果將在這裡顯示 -->
+        </div>
+        <div class="col-md-6">
+            <div class="map-container">
+                <div id="map"></div>
             </div>
         </div>
-        <div class="col-md-8">
-            <div id="map"></div>
-        </div>
+    </div>
+
+    <!-- 推薦結果區域 -->
+    <div class="recommendations-section">
+        <button class="nav-button prev" onclick="scrollRecommendations('prev')" disabled>
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="nav-button next" onclick="scrollRecommendations('next')" disabled>
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        <div id="recommendationResults" class="recommendations-row"></div>
     </div>
 </div>
 
 <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script>
 let map;
 let markers = [];
-let searchRadiusCircle; // 新增搜尋範圍圓圈
+let searchRadiusCircle;
+let currentScrollPosition = 0;
 
 function initMap() {
-    // 中央大學的座標
     const ncu = { lat: 24.9684, lng: 121.1955 };
     map = new google.maps.Map(document.getElementById('map'), {
         center: ncu,
         zoom: 13
     });
     
-    // 添加中央大學的標記
     new google.maps.Marker({
         position: ncu,
         map: map,
@@ -94,7 +395,6 @@ function initMap() {
         }
     });
     
-    // 添加5公里搜尋範圍圓圈
     searchRadiusCircle = new google.maps.Circle({
         strokeColor: '#FF6B6B',
         strokeOpacity: 0.8,
@@ -103,7 +403,7 @@ function initMap() {
         fillOpacity: 0.1,
         map: map,
         center: ncu,
-        radius: 5000 // 5公里 = 5000公尺
+        radius: 5000
     });
 }
 
@@ -174,6 +474,32 @@ function getRecommendation() {
     });
 }
 
+function scrollRecommendations(direction) {
+    const container = document.getElementById('recommendationResults');
+    const cardWidth = 320; // 卡片寬度 + 間距
+    const scrollAmount = cardWidth * 3; // 一次滾動3張卡片
+
+    if (direction === 'next') {
+        container.scrollLeft += scrollAmount;
+    } else {
+        container.scrollLeft -= scrollAmount;
+    }
+
+    // 更新按鈕狀態
+    setTimeout(() => {
+        updateNavButtons();
+    }, 100);
+}
+
+function updateNavButtons() {
+    const container = document.getElementById('recommendationResults');
+    const prevButton = document.querySelector('.nav-button.prev');
+    const nextButton = document.querySelector('.nav-button.next');
+
+    prevButton.disabled = container.scrollLeft <= 0;
+    nextButton.disabled = container.scrollLeft >= container.scrollWidth - container.clientWidth;
+}
+
 function displayRecommendations(recommendations) {
     const resultsDiv = document.getElementById('recommendationResults');
     resultsDiv.innerHTML = '';
@@ -185,35 +511,48 @@ function displayRecommendations(recommendations) {
     
     const bounds = new google.maps.LatLngBounds();
     
+    // 清除現有的標記
+    markers.forEach(marker => marker.setMap(null));
+    markers = [];
+
     recommendations.forEach((rec, index) => {
         // 決定使用哪張照片
         let imageHtml = '';
         if (rec.local_image_url) {
-            imageHtml = `<img src="${rec.local_image_url}" class="card-img-top restaurant-image" alt="${rec.name}" style="height: 200px; object-fit: cover;">`;
+            imageHtml = `<img src="${rec.local_image_url}" class="restaurant-image" alt="${rec.name}">`;
         } else if (rec.photo_url) {
-            imageHtml = `<img src="${rec.photo_url}" class="card-img-top restaurant-image" alt="${rec.name}" style="height: 200px; object-fit: cover;">`;
+            imageHtml = `<img src="${rec.photo_url}" class="restaurant-image" alt="${rec.name}">`;
         } else {
-            imageHtml = `<div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
-                            <i class="fas fa-utensils fa-3x text-muted"></i>
-                        </div>`;
+            imageHtml = `<div class="restaurant-image d-flex align-items-center justify-content-center bg-light">
+                <i class="fas fa-utensils fa-3x text-muted"></i>
+            </div>`;
         }
-        
+
         // 評分顯示
         const ratingHtml = rec.rating > 0 ? 
             `<span class="badge bg-warning text-dark me-2">
                 <i class="fas fa-star"></i> ${rec.rating}
             </span>` : '';
-        
-        // 網站連結
-        const websiteHtml = rec.website ? 
-            `<p class="card-text">
-                <i class="fas fa-globe text-info me-2"></i>
-                <a href="${rec.website}" target="_blank" class="text-decoration-none">官方網站</a>
-            </p>` : '';
-        
-        // 添加結果卡片
+
+        // 生成 Google Maps 連結
+        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rec.name + ' ' + rec.address)}`;
+
+        // 網站和地圖連結
+        const linksHtml = `
+            <div class="links-group">
+                ${rec.website ? 
+                    `<a href="${rec.website}" class="link-item" target="_blank">
+                        <i class="fas fa-globe"></i> 官方網站
+                    </a>` : ''
+                }
+                <a href="${googleMapsUrl}" class="link-item" target="_blank">
+                    <i class="fas fa-map"></i> Google Maps
+                </a>
+            </div>
+        `;
+
         const card = document.createElement('div');
-        card.className = 'card mb-3';
+        card.className = 'recommendation-card';
         card.innerHTML = `
             ${imageHtml}
             <div class="card-body">
@@ -232,73 +571,84 @@ function displayRecommendations(recommendations) {
                     <i class="fas fa-map-marker-alt text-danger me-2"></i>
                     ${rec.address}
                 </p>
-                ${websiteHtml}
                 <p class="card-text">
                     <i class="fas fa-lightbulb text-warning me-2"></i>
                     <small class="text-muted">${rec.analysis}</small>
                 </p>
+                ${linksHtml}
                 <button class="btn btn-outline-primary btn-sm" onclick="focusOnMarker(${index})">
                     <i class="fas fa-search-plus"></i> 在地圖上查看
                 </button>
             </div>
         `;
+        
         resultsDiv.appendChild(card);
-        
+
         // 添加地圖標記
-        const position = { lat: rec.lat, lng: rec.lng };
-        const marker = new google.maps.Marker({
-            position: position,
-            map: map,
-            title: rec.name,
-            label: {
-                text: (index + 1).toString(),
-                color: 'white'
-            },
-            animation: google.maps.Animation.DROP
-        });
-        
-        // 更詳細的資訊視窗內容
-        const infoWindowContent = `
-            <div style="max-width: 300px;">
-                ${rec.photo_url || rec.local_image_url ? 
-                    `<img src="${rec.local_image_url || rec.photo_url}" style="width: 100%; height: 150px; object-fit: cover; margin-bottom: 10px; border-radius: 5px;" alt="${rec.name}">` : 
-                    ''
-                }
-                <h6 class="mb-1">${rec.name}</h6>
-                <p class="mb-1">
-                    <small class="text-primary">${rec.type}</small>
-                    ${rec.rating > 0 ? `<span class="badge bg-warning text-dark ms-2"><i class="fas fa-star"></i> ${rec.rating}</span>` : ''}
-                </p>
-                <p class="mb-1"><small><i class="fas fa-map-marker-alt text-danger"></i> ${rec.distance} 公里</small></p>
-                <p class="mb-0"><small>${rec.address}</small></p>
-                ${rec.website ? `<p class="mb-0 mt-2"><small><a href="${rec.website}" target="_blank">官方網站</a></small></p>` : ''}
-            </div>
-        `;
-        
-        const infowindow = new google.maps.InfoWindow({
-            content: infoWindowContent
-        });
-        
-        marker.addListener('click', () => {
-            // 關閉之前開啟的資訊視窗
-            markers.forEach(m => {
-                if (m.infoWindow) {
-                    m.infoWindow.close();
-                }
+        if (rec.lat && rec.lng) {
+            const position = { lat: rec.lat, lng: rec.lng };
+            const marker = new google.maps.Marker({
+                position: position,
+                map: map,
+                title: rec.name,
+                label: {
+                    text: (index + 1).toString(),
+                    color: 'white'
+                },
+                animation: google.maps.Animation.DROP
             });
-            infowindow.open(map, marker);
-        });
-        
-        // 將資訊視窗存儲到標記物件中
-        marker.infoWindow = infowindow;
-        markers.push(marker);
-        bounds.extend(position);
+
+            // 更詳細的資訊視窗內容
+            const infoWindowContent = `
+                <div style="max-width: 300px;">
+                    ${rec.photo_url || rec.local_image_url ? 
+                        `<img src="${rec.local_image_url || rec.photo_url}" style="width: 100%; height: 150px; object-fit: cover; margin-bottom: 10px; border-radius: 5px;" alt="${rec.name}">` : 
+                        ''
+                    }
+                    <h6 class="mb-1">${rec.name}</h6>
+                    <p class="mb-1">
+                        <small class="text-primary">${rec.type}</small>
+                        ${rec.rating > 0 ? `<span class="badge bg-warning text-dark ms-2"><i class="fas fa-star"></i> ${rec.rating}</span>` : ''}
+                    </p>
+                    <p class="mb-1"><small><i class="fas fa-map-marker-alt text-danger"></i> ${rec.distance} 公里</small></p>
+                    <p class="mb-0"><small>${rec.address}</small></p>
+                    <div style="margin-top: 10px;">
+                        ${rec.website ? 
+                            `<a href="${rec.website}" target="_blank" class="btn btn-sm btn-outline-primary me-2">
+                                <i class="fas fa-globe"></i> 官網
+                            </a>` : ''
+                        }
+                        <a href="${googleMapsUrl}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-map"></i> Google Maps
+                        </a>
+                    </div>
+                </div>
+            `;
+
+            const infowindow = new google.maps.InfoWindow({
+                content: infoWindowContent
+            });
+
+            marker.addListener('click', () => {
+                // 關閉之前開啟的資訊視窗
+                markers.forEach(m => {
+                    if (m.infoWindow) {
+                        m.infoWindow.close();
+                    }
+                });
+                infowindow.open(map, marker);
+            });
+
+            marker.infoWindow = infowindow;
+            markers.push(marker);
+            bounds.extend(position);
+        }
     });
-    
+
     // 調整地圖視角以顯示所有標記
     bounds.extend(new google.maps.LatLng(24.9684, 121.1955)); // 加入中央大學的位置
     map.fitBounds(bounds);
-    
+
     // 如果縮放太近，設定最大縮放級別
     const listener = google.maps.event.addListener(map, 'idle', function() {
         if (map.getZoom() > 16) {
@@ -306,11 +656,33 @@ function displayRecommendations(recommendations) {
         }
         google.maps.event.removeListener(listener);
     });
+
+    // 卡片動畫
+    anime({
+        targets: '.recommendation-card',
+        opacity: [0, 1],
+        translateY: [40, 0],
+        delay: anime.stagger(120),
+        easing: 'easeOutExpo',
+        duration: 700,
+        complete: function(anim) {
+            document.querySelectorAll('.recommendation-card').forEach(card => {
+                card.classList.add('animated');
+            });
+        }
+    });
+
+    // 更新導航按鈕狀態
+    updateNavButtons();
 }
 
-// 新增函數：聚焦到特定標記
 function focusOnMarker(index) {
     if (markers[index]) {
+        // 先滾動到地圖位置
+        const mapElement = document.getElementById('map');
+        mapElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // 設置地圖中心和縮放級別
         map.setCenter(markers[index].getPosition());
         map.setZoom(18);
         
