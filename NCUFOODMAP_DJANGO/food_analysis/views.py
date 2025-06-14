@@ -880,3 +880,18 @@ def get_nutrition_consultant_response(question, conversation_history):
         return "網路連接問題，請檢查網路。"
     except Exception as e:
         return f"系統錯誤：{str(e)[:50]}"
+
+@login_required
+def delete_food_record(request, record_id):
+    """刪除飲食記錄"""
+    record = get_object_or_404(PersonalFoodRecord, id=record_id, user=request.user)
+    record_date = record.date_consumed
+    if hasattr(record_date, 'date'):
+        record_date = record_date.date()
+    record.delete()
+    
+    # 更新該日期的營養總結
+    update_daily_nutrition_summary(request.user, record_date)
+    
+    messages.success(request, '飲食記錄已成功刪除')
+    return redirect('personal_food_diary')
