@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'ai_recommendation',
     'ai_assistant',
     'social',  # 新增社交功能應用
+    'channels',  # 添加 channels
 ]
 
 # Google OAuth 配置
@@ -257,4 +258,12 @@ LOGGING = {
             'propagate': False,
         },
     },
+}
+
+# Channels 配置
+ASGI_APPLICATION = 'ncufoodmap_backend.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+    }
 }
