@@ -180,6 +180,25 @@ os.makedirs(STATIC_ROOT, exist_ok=True)
 os.makedirs(MEDIA_ROOT, exist_ok=True)
 os.makedirs(os.path.join(MEDIA_ROOT, 'restaurant_images'), exist_ok=True)
 
+# Whitenoise 設定
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_MANIFEST_STRICT = False
+WHITENOISE_ALLOW_ALL_ORIGINS = True
+
+# 在生產環境中使用 whitenoise 來處理媒體文件
+if not DEBUG:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    # 將媒體文件目錄添加到 WhiteNoise 的靜態文件目錄中
+    WHITENOISE_ROOT = STATIC_ROOT
+    import shutil
+    media_source = os.path.join(BASE_DIR, 'media')
+    media_target = os.path.join(STATIC_ROOT, 'media')
+    if os.path.exists(media_source):
+        if os.path.exists(media_target):
+            shutil.rmtree(media_target)
+        shutil.copytree(media_source, media_target, dirs_exist_ok=True)
+
 # Crispy Forms settings
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
@@ -239,14 +258,3 @@ LOGGING = {
         },
     },
 }
-
-# Whitenoise 設定
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-WHITENOISE_USE_FINDERS = True
-WHITENOISE_MANIFEST_STRICT = False
-WHITENOISE_ALLOW_ALL_ORIGINS = True
-
-# 在生產環境中使用 whitenoise 來處理媒體文件
-if not DEBUG:
-    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-    WHITENOISE_ROOT = MEDIA_ROOT

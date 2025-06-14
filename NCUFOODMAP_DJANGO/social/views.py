@@ -52,6 +52,8 @@ def social_feed(request):
             post = form.save(commit=False)
             post.user = request.user
             post.save()
+            # 更新用戶統計
+            request.user.social_profile.update_statistics()
             messages.success(request, '動態發布成功！')
             return redirect('social:feed')
     else:
@@ -59,9 +61,9 @@ def social_feed(request):
     
     # 獲取用戶統計
     user_stats = {
-        'posts_count': SocialPost.objects.filter(user=request.user).count(),
-        'friends_count': len(friend_ids) - 1,  # 減去自己
-        'likes_received': PostLike.objects.filter(post__user=request.user).count(),
+        'posts_count': request.user.social_profile.total_posts,
+        'friends_count': request.user.social_profile.total_friends,
+        'likes_received': request.user.social_profile.total_likes_received,
     }
     
     context = {
@@ -369,6 +371,9 @@ def user_profile(request, user_id=None):
     
     # 獲取或創建用戶社交資料
     social_profile, created = UserProfile.objects.get_or_create(user=profile_user)
+    
+    # 更新統計數據
+    social_profile.update_statistics()
     
     # 用戶動態
     user_posts = SocialPost.objects.filter(user=profile_user, is_public=True).order_by('-created_at')[:10]
@@ -818,4 +823,47 @@ def leave_chat_room(request, room_id):
         messages.success(request, '已離開聊天室。')
         return redirect('social:chat_list')
     
-    return JsonResponse({'success': False, 'error': '無效的請求方法'}) 
+    return JsonResponse({'success': False, 'error': '無效的請求方法'})
+
+@login_required
+def like_post(request, post_id):
+    """按讚動態"""
+    post = get_object_or_404(SocialPost, id=post_id)
+    like, created = PostLike.objects.get_or_create(user=request.user, post=post)
+    
+    if not created:
+        like.delete()
+        action = 'unliked'
+    else:
+        action = 'liked'
+        # 更新被按讚用戶的統計
+        post.user.social_profile.update_statistics()
+    
+    # 更新當前用戶的統計
+    request.user.social_profile.update_statistics()
+    
+    return JsonResponse({
+        'status': 'success',
+        'action': action,
+        'likes_count': post.likes.count(),
+        'user_likes_received': request.user.social_profile.total_likes_received
+    })
+
+@login_required
+def accept_friend_request(request, request_id):
+    """接受好友請求"""
+    friend_request = get_object_or_404(Friendship, id=request_id, to_user=request.user, status='pending')
+    friend_request.status = 'accepted'
+    friend_request.save()
+    
+    # 更新雙方的統計數據
+    request.user.social_profile.update_statistics()
+    friend_request.from_user.social_profile.update_statistics()
+    
+    messages.success(request, f'已接受 {friend_request.from_user.username} 的好友請求！')
+    return redirect('social:friends')
+
+@login_required
+def post_detail(request, post_id):
+    post = get_object_or_404(SocialPost, id=post_id)
+    return render(request, 'social/post_detail.html', {'post': post}) 

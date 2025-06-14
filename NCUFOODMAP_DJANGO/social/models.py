@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from food_analysis.models import PersonalFoodRecord
 from restaurants.models import Restaurant
+from django.db.models import Q
 
 class Friendship(models.Model):
     """好友關係模型"""
@@ -174,6 +175,24 @@ class UserProfile(models.Model):
     
     def __str__(self):
         return f"{self.user.username} 的社交資料"
+    
+    def update_statistics(self):
+        """更新用戶統計數據"""
+        from .models import SocialPost, PostLike, Friendship
+        
+        # 更新動態數
+        self.total_posts = SocialPost.objects.filter(user=self.user).count()
+        
+        # 更新獲讚數
+        self.total_likes_received = PostLike.objects.filter(post__user=self.user).count()
+        
+        # 更新好友數
+        self.total_friends = Friendship.objects.filter(
+            (Q(from_user=self.user) | Q(to_user=self.user)),
+            status='accepted'
+        ).count()
+        
+        self.save()
 
 class Notification(models.Model):
     """通知模型"""

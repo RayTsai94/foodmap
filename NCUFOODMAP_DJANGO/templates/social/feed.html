@@ -298,18 +298,23 @@ $(document).ready(function() {
         var button = $(this);
         
         $.ajax({
-            url: '{% url "social:toggle_like" 0 %}'.replace('0', postId),
+            url: '{% url "social:like_post" 0 %}'.replace('0', postId),
             type: 'POST',
             data: {
                 'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
             },
             success: function(data) {
-                if (data.liked) {
-                    button.addClass('liked');
-                } else {
-                    button.removeClass('liked');
+                if (data.status === 'success') {
+                    if (data.action === 'liked') {
+                        button.addClass('liked');
+                    } else {
+                        button.removeClass('liked');
+                    }
+                    // 更新按讚數
+                    button.find('.likes-count').text(data.likes_count);
+                    // 更新用戶統計
+                    $('.social-stats h4').eq(2).text(data.user_likes_received);
                 }
-                button.find('.likes-count').text(data.likes_count);
             }
         });
     });
