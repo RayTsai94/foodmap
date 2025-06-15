@@ -7,6 +7,7 @@ urlpatterns = [
     # 社交動態
     path('', views.social_feed, name='feed'),
     path('like/<int:post_id>/', views.toggle_like, name='toggle_like'),
+    path('like_post/<int:post_id>/', views.like_post, name='like_post'),
     path('comment/<int:post_id>/', views.add_comment, name='add_comment'),
     
     # 好友系統
@@ -39,4 +40,5 @@ urlpatterns = [
     path('chat/create-group/', views.create_group_chat, name='create_group_chat'),
     path('chat/message/<int:message_id>/delete/', views.delete_message, name='delete_message'),
     path('chat/<int:room_id>/leave/', views.leave_chat_room, name='leave_chat_room'),
+    path('post/<int:post_id>/', views.post_detail, name='post_detail'),
 ] 

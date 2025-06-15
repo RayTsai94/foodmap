@@ -488,176 +488,181 @@
 
 {% block extra_js %}
 <script>
-// 獲取 CSRF token
-function getCSRFToken() {
-    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-}
+    const roomId = '{{ room.id }}';
+    const currentUserId = '{{ request.user.id }}';
+    let chatSocket = null;
 
-// 自動調整輸入框高度
-document.getElementById('messageInput').addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
-});
+    function connectWebSocket() {
+        // 建立 WebSocket 連接
+        chatSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/chat/' + roomId + '/'
+        );
 
-// 發送消息
-document.getElementById('chatForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const messageInput = document.getElementById('messageInput');
-    const content = messageInput.value.trim();
-    
-    if (!content && !formData.get('image') && !formData.get('file')) {
-        return;
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            appendMessage(data);
+        };
+
+        chatSocket.onclose = function(e) {
+            console.log('Chat socket closed unexpectedly');
+            // 嘗試重新連接
+            setTimeout(connectWebSocket, 3000);
+        };
     }
-    
-    // 禁用發送按鈕
-    const sendBtn = document.getElementById('sendBtn');
-    sendBtn.disabled = true;
-    
-    fetch(window.location.href, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCSRFToken(),
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // 清空輸入
-            messageInput.value = '';
-            messageInput.style.height = 'auto';
-            clearFilePreview();
-            cancelReply();
-            
-            // 重新載入頁面以顯示新消息
-            location.reload();
-        } else {
-            alert('發送失敗：' + data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('發送失敗，請稍後再試。');
-    })
-    .finally(() => {
-        sendBtn.disabled = false;
-    });
-});
 
-// 滾動到底部
-function scrollToBottom() {
-    const chatMessages = document.getElementById('chatMessages');
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-}
+    // 初始連接
+    connectWebSocket();
 
-// 頁面載入時滾動到底部
-document.addEventListener('DOMContentLoaded', function() {
-    scrollToBottom();
-});
-
-// 回覆消息
-function replyToMessage(messageId, content) {
-    document.getElementById('replyToId').value = messageId;
-    document.getElementById('replyToUser').textContent = '用戶';
-    document.getElementById('replyToContent').textContent = content;
-    document.getElementById('replyPreview').style.display = 'block';
-    document.getElementById('messageInput').focus();
-}
-
-// 取消回覆
-function cancelReply() {
-    document.getElementById('replyToId').value = '';
-    document.getElementById('replyPreview').style.display = 'none';
-}
-
-// 文件預覽
-function previewFile(input, type) {
-    const file = input.files[0];
-    if (file) {
-        const preview = document.getElementById('filePreview');
-        const fileName = document.getElementById('fileName');
+    function appendMessage(data) {
+        const messagesContainer = document.querySelector('.chat-messages');
+        const isOwn = data.user_id.toString() === currentUserId;
         
-        fileName.textContent = file.name;
-        preview.classList.remove('d-none');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
         
-        // 清除其他文件輸入
-        if (type === 'image') {
-            document.getElementById('fileInput').value = '';
-        } else {
-            document.getElementById('imageInput').value = '';
+        let avatarHtml = '';
+        if (!isOwn && data.avatar_url) {
+            avatarHtml = `<img src="${data.avatar_url}" alt="${data.username}" class="message-avatar">`;
         }
+        
+        messageDiv.innerHTML = `
+            ${!isOwn ? avatarHtml : ''}
+            <div class="message-content">
+                <div class="message-bubble ${isOwn ? 'own' : 'other'}">
+                    ${data.message}
+                </div>
+                <div class="message-info">
+                    ${!isOwn ? data.username + ' • ' : ''}${new Date(data.timestamp).toLocaleTimeString()}
+                </div>
+            </div>
+            ${isOwn ? avatarHtml : ''}
+        `;
+        
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-}
 
-// 清除文件預覽
-function clearFilePreview() {
-    document.getElementById('filePreview').classList.add('d-none');
-    document.getElementById('imageInput').value = '';
-    document.getElementById('fileInput').value = '';
-}
-
-// 顯示圖片模態框
-function showImageModal(imageUrl) {
-    document.getElementById('modalImage').src = imageUrl;
-    new bootstrap.Modal(document.getElementById('imageModal')).show();
-}
-
-// 刪除消息
-function deleteMessage(messageId) {
-    if (confirm('確定要刪除這條消息嗎？')) {
-        fetch(`/social/chat/message/${messageId}/delete/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRFToken()
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('刪除失敗：' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('刪除失敗，請稍後再試。');
-        });
-    }
-}
-
-// 離開聊天
-function leaveChat() {
-    if (confirm('確定要離開這個聊天室嗎？')) {
-        fetch(`/social/chat/{{ room.id }}/leave/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRFToken()
-            }
-        })
-        .then(response => {
-            if (response.ok) {
-                window.location.href = '{% url "social:chat_list" %}';
-            } else {
-                alert('離開失敗，請稍後再試。');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('離開失敗，請稍後再試。');
-        });
-    }
-}
-
-// Enter 鍵發送消息（Shift+Enter 換行）
-document.getElementById('messageInput').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // 發送訊息
+    document.querySelector('#chat-form').onsubmit = function(e) {
         e.preventDefault();
-        document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+        const messageInput = document.querySelector('#message-input');
+        const message = messageInput.value.trim();
+        
+        if (message) {
+            chatSocket.send(JSON.stringify({
+                'message': message
+            }));
+            messageInput.value = '';
+        }
+    };
+
+    // 自動調整輸入框高度
+    const messageInput = document.querySelector('#message-input');
+    messageInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+
+    // 監聽 Enter 鍵發送訊息
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.querySelector('#chat-form').dispatchEvent(new Event('submit'));
+        }
+    });
+
+    // 回覆消息
+    function replyToMessage(messageId, content) {
+        document.getElementById('replyToId').value = messageId;
+        document.getElementById('replyToUser').textContent = '用戶';
+        document.getElementById('replyToContent').textContent = content;
+        document.getElementById('replyPreview').style.display = 'block';
+        document.getElementById('messageInput').focus();
     }
-});
+
+    // 取消回覆
+    function cancelReply() {
+        document.getElementById('replyToId').value = '';
+        document.getElementById('replyPreview').style.display = 'none';
+    }
+
+    // 文件預覽
+    function previewFile(input, type) {
+        const file = input.files[0];
+        if (file) {
+            const preview = document.getElementById('filePreview');
+            const fileName = document.getElementById('fileName');
+            
+            fileName.textContent = file.name;
+            preview.classList.remove('d-none');
+            
+            // 清除其他文件輸入
+            if (type === 'image') {
+                document.getElementById('fileInput').value = '';
+            } else {
+                document.getElementById('imageInput').value = '';
+            }
+        }
+    }
+
+    // 清除文件預覽
+    function clearFilePreview() {
+        document.getElementById('filePreview').classList.add('d-none');
+        document.getElementById('imageInput').value = '';
+        document.getElementById('fileInput').value = '';
+    }
+
+    // 顯示圖片模態框
+    function showImageModal(imageUrl) {
+        document.getElementById('modalImage').src = imageUrl;
+        new bootstrap.Modal(document.getElementById('imageModal')).show();
+    }
+
+    // 刪除消息
+    function deleteMessage(messageId) {
+        if (confirm('確定要刪除這條消息嗎？')) {
+            fetch(`/social/chat/message/${messageId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('刪除失敗：' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('刪除失敗，請稍後再試。');
+            });
+        }
+    }
+
+    // 離開聊天
+    function leaveChat() {
+        if (confirm('確定要離開這個聊天室嗎？')) {
+            fetch(`/social/chat/{{ room.id }}/leave/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '{% url "social:chat_list" %}';
+                } else {
+                    alert('離開失敗，請稍後再試。');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('離開失敗，請稍後再試。');
+            });
+        }
+    }
 </script>
 {% endblock %} 

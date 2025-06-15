@@ -7,4 +7,5 @@ urlpatterns = [
     path('my-diary/', views.personal_food_diary, name='personal_food_diary'),
     path('my-dashboard/', views.personal_nutrition_dashboard, name='personal_nutrition_dashboard'),
     path('ai-nutrition-consultant/', views.ai_nutrition_consultant, name='ai_nutrition_consultant'),
+    path('diary/delete/<int:record_id>/', views.delete_food_record, name='delete_food_record'),
 ] 
