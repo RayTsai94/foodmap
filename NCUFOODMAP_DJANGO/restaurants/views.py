@@ -30,39 +30,41 @@ def home(request):
     })
 
 def restaurant_list(request):
-    """餐廳列表視圖，支持過濾和分頁"""
+    """餐廳列表視圖，支持分類、評分、關鍵字過濾與分頁"""
     restaurants = Restaurant.objects.filter(is_active=True)
-    
-    # 處理過濾
+
+    # 過濾表單
     filter_form = RestaurantFilterForm(request.GET)
     if filter_form.is_valid():
         # 分類過濾
         category = filter_form.cleaned_data.get('category')
         if category:
             restaurants = restaurants.filter(categories=category)
-        
         # 評分過濾
         min_rating = filter_form.cleaned_data.get('min_rating')
         if min_rating:
             restaurants = restaurants.annotate(
                 avg_rating=Avg('reviews__rating')
             ).filter(avg_rating__gte=min_rating)
-        
-        # 關鍵字搜尋
+        # 關鍵字搜尋（名稱、地址、分類）
         name_or_address = filter_form.cleaned_data.get('name_or_address')
         if name_or_address:
             restaurants = restaurants.filter(
-                Q(name__icontains=name_or_address) | Q(address__icontains=name_or_address)
-            )
-    
+                Q(name__icontains=name_or_address) |
+                Q(address__icontains=name_or_address) |
+                Q(categories__name__icontains=name_or_address)
+            ).distinct()
+
+    # 排序（避免分頁警告）
+    restaurants = restaurants.order_by('id')
+
     # 分頁
-    restaurant_list = Restaurant.objects.all().order_by('id')  # 或其他你想排序的欄位
-    paginator = Paginator(restaurant_list, 12)
+    paginator = Paginator(restaurants, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
-    # 傳遞 JSON 給 JS
-    restaurant_json = json.dumps([
+
+    # 傳遞「所有符合條件」的餐廳給地圖
+    all_restaurant_json = json.dumps([
         {
             'id': r.id,
             'name': r.name,
@@ -73,13 +75,13 @@ def restaurant_list(request):
             'image': r.image.url if r.image else '/static/img/default-restaurant.jpg',
             'url': f"/restaurants/{r.id}/"
         }
-        for r in page_obj if r.lat and r.lng
+        for r in restaurants if r.lat and r.lng
     ])
-    
+
     return render(request, 'restaurants/restaurant_list.html', {
         'page_obj': page_obj,
         'filter_form': filter_form,
-        'restaurant_json': restaurant_json,
+        'restaurant_json': all_restaurant_json,  # 這裡改成 all_restaurant_json
         'google_maps_api_key': settings.GOOGLE_MAPS_API_KEY,
     })
 

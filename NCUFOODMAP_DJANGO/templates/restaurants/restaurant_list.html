@@ -219,7 +219,7 @@
     <!-- 地圖區域 -->
     <div id="map-section">
         <div id="restaurant-map"></div>
-        {% if page_obj %}
+        {% if page_obj is not None %}
             <div class="alert alert-info text-center">
                 <i class="fas fa-map-marker-alt me-2"></i>
                 找到 {{ page_obj.paginator.count }} 間餐廳，點擊地圖標記查看詳細資訊

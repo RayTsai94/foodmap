@@ -100,6 +100,37 @@
         }{% if not forloop.last %},{% endif %}
         {% endfor %}
     ];
+
+    function initializeMap() {
+        const map = new google.maps.Map(document.getElementById('restaurant-map'), {
+            center: { lat: 24.9685, lng: 121.1945 }, // 中央大學附近座標，可依需求調整
+            zoom: 15
+        });
+
+        restaurantLocations.forEach(function(restaurant) {
+            if (restaurant.lat && restaurant.lng) {
+                const marker = new google.maps.Marker({
+                    position: { lat: restaurant.lat, lng: restaurant.lng },
+                    map: map,
+                    title: restaurant.name
+                });
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div class="map-info-window">
+                            <strong>${restaurant.name}</strong><br>
+                            ${restaurant.address}<br>
+                            <a href="/restaurants/${restaurant.id}/" target="_blank">查看詳情</a>
+                        </div>
+                    `
+                });
+
+                marker.addListener('click', function() {
+                    infoWindow.open(map, marker);
+                });
+            }
+        });
+    }
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initializeMap" async defer></script>
-{% endblock %} 
+{% endblock %}
