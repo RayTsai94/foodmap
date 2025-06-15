@@ -234,10 +234,10 @@
                 <div class="col-md-6 col-lg-4 mb-4">
                     <div class="card restaurant-card h-100">
                         {% if restaurant.image %}
-                            <img src="{{ restaurant.image.url }}" class="card-img-top" alt="{{ restaurant.name }}" style="height: 200px; object-fit: cover;">
-                        {% else %}
-                            <img src="{% static 'img/default-restaurant.jpg' %}" class="card-img-top" alt="{{ restaurant.name }}" style="height: 200px; object-fit: cover;">
-                        {% endif %}
+    <img src="{{ restaurant.image.url }}" alt="{{ restaurant.name }}">
+{% else %}
+    <img src="{% static 'img/default-restaurant.jpg' %}" alt="{{ restaurant.name }}">
+{% endif %}
                         <div class="card-body">
                             <h5 class="card-title text-primary">{{ restaurant.name }}</h5>
                             <div class="mb-2">
@@ -336,8 +336,7 @@
 let map;
 let markers = [];
 let infoWindow;
-
-const restaurants = {{ restaurant_json|safe }};
+const restaurants = JSON.parse('{{ restaurant_json|escapejs }}');
 
 // 保存視圖狀態到 localStorage
 function saveViewPreference(isMapView) {
@@ -634,4 +633,4 @@ window.addEventListener('load', function() {
     }, 5000);
 });
 </script>
-{% endblock %} 
+{% endblock %}

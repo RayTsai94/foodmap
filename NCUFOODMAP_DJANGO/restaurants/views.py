@@ -56,7 +56,8 @@ def restaurant_list(request):
             )
     
     # 分頁
-    paginator = Paginator(restaurants, 12)  # 每頁12個餐廳
+    restaurant_list = Restaurant.objects.all().order_by('id')  # 或其他你想排序的欄位
+    paginator = Paginator(restaurant_list, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
