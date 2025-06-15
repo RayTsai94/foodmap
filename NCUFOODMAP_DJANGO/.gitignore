@@ -25,7 +25,7 @@ wheels/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-media/
+
 
 # Django 靜態檔案收集目錄（collectstatic 的輸出）
 staticfiles/
