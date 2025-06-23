@@ -62,35 +62,33 @@
         {% for restaurant in top_restaurants %}
             <div class="col-md-4 mb-4">
                 <div class="card h-100">
-                    {% if restaurant.image %}
-                        <img src="{{ restaurant.image.url }}" class="card-img-top" alt="{{ restaurant.name }}">
-                    {% else %}
-                        <img src="{% static 'img/default-restaurant.jpg' %}" class="card-img-top" alt="{{ restaurant.name }}">
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">{{ restaurant.name }}</h5>
-                        <div class="mb-2">
-                            {% for category in restaurant.categories.all %}
-                                <span class="badge bg-secondary">{{ category.name }}</span>
-                            {% endfor %}
-                        </div>
-                        <p class="card-text text-muted">{{ restaurant.address }}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="rating">
-                                {% with ''|center:5 as range %}
-                                    {% for _ in range %}
-                                        {% if forloop.counter <= restaurant.avg_rating|default:0|floatformat:"0" %}
-                                            <i class="fas fa-star"></i>
-                                        {% else %}
-                                            <i class="far fa-star"></i>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% endwith %}
-                                <span class="ms-1">{{ restaurant.avg_rating|default:0|floatformat:1 }}</span>
-                            </div>
-                            <a href="{% url 'restaurant_detail' restaurant.pk %}" class="btn btn-sm btn-primary">查看詳情</a>
-                        </div>
+                  {% if restaurant.image %}
+                    <img src="{% static restaurant.image %}" class="card-img-top" alt="{{ restaurant.name }}">
+                  {% else %}
+                    <img src="{% static 'img/default-restaurant.jpg' %}" class="card-img-top" alt="{{ restaurant.name }}">
+                  {% endif %}
+                  <div class="card-body">
+                    <h5 class="card-title">{{ restaurant.name }}</h5>
+                    <div class="mb-2">
+                      {% for category in restaurant.categories.all %}
+                        <span class="badge bg-secondary">{{ category.name }}</span>
+                      {% endfor %}
                     </div>
+                    <p class="card-text text-muted">{{ restaurant.address }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div class="rating">
+                        {% for i in "12345" %}
+                          {% if forloop.counter <= restaurant.avg_rating|default:0|floatformat:"0" %}
+                            <i class="fas fa-star"></i>
+                          {% else %}
+                            <i class="far fa-star"></i>
+                          {% endif %}
+                        {% endfor %}
+                        <span class="ms-1">{{ restaurant.avg_rating|default:0|floatformat:1 }}</span>
+                      </div>
+                      <a href="{% url 'restaurant_detail' restaurant.pk %}" class="btn btn-sm btn-primary">查看詳情</a>
+                    </div>
+                  </div>
                 </div>
             </div>
         {% empty %}
@@ -359,4 +357,4 @@ window.addEventListener('load', function() {
 
 <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap" async defer></script>
 
-{% endblock %} 
+{% endblock %}

@@ -19,7 +19,7 @@ class Restaurant(models.Model):
     phone = models.CharField(max_length=20, blank=True)
     description = models.TextField(blank=True)
     categories = models.ManyToManyField(Category, related_name='restaurants')
-    image = models.ImageField(upload_to='restaurant_images/', blank=True, null=True)
+    image = models.CharField(max_length=100, blank=True, default='img/default-restaurant.jpg')
     website = models.URLField(blank=True)
     lat = models.FloatField(null=True, blank=True)  # 緯度
     lng = models.FloatField(null=True, blank=True)  # 經度
@@ -45,7 +45,7 @@ class MenuItem(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=8, decimal_places=2)
-    image = models.ImageField(upload_to='menu_item_images/', blank=True, null=True)
+    image_name = models.CharField(max_length=100, blank=True, default='img/default-restaurant.jpg')
     is_vegetarian = models.BooleanField(default=False)
     is_spicy = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)

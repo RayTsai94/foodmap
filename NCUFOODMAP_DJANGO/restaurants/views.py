@@ -72,7 +72,7 @@ def restaurant_list(request):
             'lat': r.lat,
             'lng': r.lng,
             'categories': ', '.join([c.name for c in r.categories.all()]),
-            'image': r.image.url if r.image else '/static/img/default-restaurant.jpg',
+            'image': f"/static/restaurant_images/{r.image}" if r.image else '/static/img/default-restaurant.jpg',
             'url': f"/restaurants/{r.id}/"
         }
         for r in restaurants if r.lat and r.lng

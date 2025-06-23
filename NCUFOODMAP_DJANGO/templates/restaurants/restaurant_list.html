@@ -233,11 +233,11 @@
             {% for restaurant in page_obj %}
                 <div class="col-md-6 col-lg-4 mb-4">
                     <div class="card restaurant-card h-100">
-                        {% if restaurant.image %}
-    <img src="{{ restaurant.image.url }}" alt="{{ restaurant.name }}">
-{% else %}
-    <img src="{% static 'img/default-restaurant.jpg' %}" alt="{{ restaurant.name }}">
-{% endif %}
+                       {% if restaurant.image %}
+                    <img src="{% static restaurant.image %}" class="card-img-top" alt="{{ restaurant.name }}">
+                       {% else %}
+                    <img src="{% static 'img/default-restaurant.jpg' %}" class="card-img-top" alt="{{ restaurant.name }}">
+                       {% endif %}
                         <div class="card-body">
                             <h5 class="card-title text-primary">{{ restaurant.name }}</h5>
                             <div class="mb-2">
