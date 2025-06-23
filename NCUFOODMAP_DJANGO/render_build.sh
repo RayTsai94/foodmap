@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
-# 創建媒體文件目錄
-mkdir -p /opt/render/project/src/media/restaurant_images
 
-# 設置目錄權限
+# 創建 media 資料夾（給使用者上傳用）
+mkdir -p /opt/render/project/src/media
 chmod -R 755 /opt/render/project/src/media
 
 # 安裝依賴
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 
-# 收集靜態文件
+# 收集靜態檔案
 python manage.py collectstatic --noinput
 
-# 運行數據庫遷移
-python manage.py migrate 
+# 執行遷移
+python manage.py migrate
