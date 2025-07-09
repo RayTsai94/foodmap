@@ -274,7 +274,8 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" 
+                            onclick="trackCreateGroup(document.getElementById('id_name').value, document.getElementById('id_group_type').value)">
                         <i class="fas fa-plus me-2"></i>創建群組
                     </button>
                 </div>
@@ -339,5 +340,38 @@ $(document).ready(function() {
         }
     });
 });
+
+// 追蹤創建群組
+function trackCreateGroup(groupName, groupType) {
+    gtag('event', 'create_group', {
+        'group_name': groupName,
+        'group_type': groupType
+    });
+}
+
+// 追蹤加入群組
+function trackJoinGroup(groupId, groupName) {
+    gtag('event', 'join_group', {
+        'group_id': groupId,
+        'group_name': groupName
+    });
+}
+
+// 追蹤離開群組
+function trackLeaveGroup(groupId, groupName) {
+    gtag('event', 'leave_group', {
+        'group_id': groupId,
+        'group_name': groupName
+    });
+}
+
+// 追蹤群組互動
+function trackGroupInteraction(groupId, groupName, interactionType) {
+    gtag('event', 'group_interaction', {
+        'group_id': groupId,
+        'group_name': groupName,
+        'interaction_type': interactionType
+    });
+}
 </script>
 {% endblock %} 

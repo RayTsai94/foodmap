@@ -4,6 +4,49 @@
 
 {% block title %}{{ restaurant.name }} - NCU 食物地圖{% endblock %}
 
+{% block extra_js %}
+<script>
+// 頁面載入時發送瀏覽事件
+document.addEventListener('DOMContentLoaded', function() {
+    gtag('event', 'view_item', {
+        'items': [{
+            'item_id': '{{ restaurant.id }}',
+            'item_name': '{{ restaurant.name }}',
+            'item_category': '{% for category in restaurant.categories.all %}{{ category.name }}{% if not forloop.last %}, {% endif %}{% endfor %}'
+        }]
+    });
+});
+
+// 追蹤評分事件
+function trackRating(rating) {
+    gtag('event', 'rate_restaurant', {
+        'restaurant_id': '{{ restaurant.id }}',
+        'restaurant_name': '{{ restaurant.name }}',
+        'rating': rating
+    });
+}
+
+// 追蹤導航事件
+function trackNavigation() {
+    gtag('event', 'get_directions', {
+        'restaurant_id': '{{ restaurant.id }}',
+        'restaurant_name': '{{ restaurant.name }}',
+        'address': '{{ restaurant.address }}'
+    });
+}
+
+// 追蹤查看菜單項目詳情事件
+function trackMenuItemView(itemId, itemName) {
+    gtag('event', 'view_menu_item', {
+        'restaurant_id': '{{ restaurant.id }}',
+        'restaurant_name': '{{ restaurant.name }}',
+        'item_id': itemId,
+        'item_name': itemName
+    });
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <!-- 餐廳頭部區域 -->
 <div class="restaurant-header" style="background-image: url('{% if restaurant.image %}{{ restaurant.image.url }}{% else %}{% static 'img/default-restaurant.jpg' %}{% endif %}');">
@@ -76,7 +119,7 @@
                                 {% if item.is_spicy %}
                                     <span class="badge bg-danger">辣</span>
                                 {% endif %}
-                                <a href="{% url 'menu_item_detail' item.pk %}" class="btn btn-sm btn-outline-primary mt-2">詳細資訊</a>
+                                <a href="{% url 'menu_item_detail' item.pk %}" class="btn btn-sm btn-outline-primary mt-2" onclick="trackMenuItemView('{{ item.pk }}', '{{ item.name }}')">詳細資訊</a>
                             </div>
                         </div>
                     </div>
@@ -110,7 +153,7 @@
                                             {% for radio in review_form.rating %}
                                                 <div class="form-check form-check-inline">
                                                     {{ radio.tag }}
-                                                    <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                    <label class="form-check-label" for="{{ radio.id_for_label }}" onclick="trackRating({{ forloop.counter }})">
                                                         <i class="fas fa-star rating-star text-muted"></i>
                                                     </label>
                                                 </div>
@@ -169,7 +212,9 @@
                     </div>
                     <div class="card-footer">
                         <a href="https://www.google.com/maps/dir/?api=1&destination={{ restaurant.lat }},{{ restaurant.lng }}" 
-                           class="btn btn-outline-primary w-100" target="_blank">
+                           class="btn btn-outline-primary w-100" 
+                           target="_blank"
+                           onclick="trackNavigation()">
                             <i class="fas fa-directions me-2"></i>導航到這裡
                         </a>
                     </div>

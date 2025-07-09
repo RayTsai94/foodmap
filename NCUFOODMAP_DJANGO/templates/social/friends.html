@@ -48,6 +48,42 @@
 </style>
 {% endblock %}
 
+{% block extra_js %}
+<script>
+// 追蹤發送好友請求
+function trackFriendRequest(userId, username) {
+    gtag('event', 'send_friend_request', {
+        'target_user_id': userId,
+        'target_username': username
+    });
+}
+
+// 追蹤接受好友請求
+function trackAcceptFriend(userId, username) {
+    gtag('event', 'accept_friend_request', {
+        'friend_user_id': userId,
+        'friend_username': username
+    });
+}
+
+// 追蹤拒絕好友請求
+function trackRejectFriend(userId, username) {
+    gtag('event', 'reject_friend_request', {
+        'user_id': userId,
+        'username': username
+    });
+}
+
+// 追蹤移除好友
+function trackRemoveFriend(userId, username) {
+    gtag('event', 'remove_friend', {
+        'friend_user_id': userId,
+        'friend_username': username
+    });
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <div class="row">
@@ -289,11 +325,13 @@
                                         </div>
                                         <div class="d-flex flex-column gap-1">
                                             <a href="{% url 'social:respond_friend_request' request.id 'accept' %}" 
-                                               class="btn btn-success btn-sm">
+                                               class="btn btn-success btn-sm"
+                                               onclick="trackAcceptFriend('{{ request.from_user.id }}', '{{ request.from_user.username }}'); acceptFriendRequest('{{ request.id }}')">
                                                 <i class="fas fa-check"></i> 接受
                                             </a>
                                             <a href="{% url 'social:respond_friend_request' request.id 'decline' %}" 
-                                               class="btn btn-outline-danger btn-sm">
+                                               class="btn btn-outline-danger btn-sm"
+                                               onclick="trackRejectFriend('{{ request.from_user.id }}', '{{ request.from_user.username }}'); rejectFriendRequest('{{ request.id }}')">
                                                 <i class="fas fa-times"></i> 拒絕
                                             </a>
                                         </div>
